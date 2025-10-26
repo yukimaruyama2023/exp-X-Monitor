@@ -29,7 +29,11 @@ def run_netdata(num_memcached):
     subprocess.run(f"sudo cp {memcached_conf} /etc/netdata/go.d/memcached.conf".split())
     subprocess.run(f"sudo systemctl restart netdata".split())
 
+def run_mutilate(num_memcached):
+
+
 def run_client(num_memcached):
+    run_mutilate(num_memcached)
     subprocess.run(f"ssh {remote_host} {remote_mutilate_path}".split())
 
 def run_server(num_memcached):
