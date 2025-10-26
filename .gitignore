@@ -1,1 +1,14 @@
 conf
+
+
+# mutilate
+/src/client/mutilate/*~
+/src/client/mutilate/*.[oda]
+/src/client/mutilate/.scon*
+/src/client/mutilate/config.log
+/src/client/mutilate/gmon.out
+/src/client/mutilate/mutilate
+/src/client/mutilate/cmdline.cc
+/src/client/mutilate/cmdline.h
+/src/client/mutilate/gtest
+/src/client/mutilate/config.h
