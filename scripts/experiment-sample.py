@@ -8,7 +8,7 @@ import sys
 # import numpy as np
 
 remote_host = "hamatora"
-remote_mutilate_path = "/home/maruyama/workspace/mutilate"
+remote_mutilate_scripts = "/home/maruyama/workspace/exp-X-Monitor/src/client/mutilate/shell-scripts/"
 conf_root = "./conf"
 
 num_memcacheds = [1,5,10]
@@ -30,11 +30,15 @@ def run_netdata(num_memcached):
     subprocess.run(f"sudo systemctl restart netdata".split())
 
 def run_mutilate(num_memcached):
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_scripts}/{str(num_memcached).zfill(3)}mcd/load.sh".split())
+    subprocess.Popen(f"ssh {remote_host} {remote_mutilate_scripts}/{str(num_memcached).zfill(3)}mcd/run.sh".split())
+
+def run_monitor():
 
 
 def run_client(num_memcached):
     run_mutilate(num_memcached)
-    subprocess.run(f"ssh {remote_host} {remote_mutilate_path}".split())
+    run_monitor()
 
 def run_server(num_memcached):
     # run_ssh_ls(num_memcached)
