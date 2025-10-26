@@ -12,3 +12,8 @@ conf
 /src/client/mutilate/cmdline.h
 /src/client/mutilate/gtest
 /src/client/mutilate/config.h
+
+
+# monitoring client
+/src/client/Monitoring_Client/client_netdata
+/src/client/Monitoring_Client/client_x-monitor
