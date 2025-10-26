@@ -33,15 +33,24 @@ def run_netdata(num_memcached):
 def run_mutilate(num_memcached):
     print(f"=== [Start] Running mutilate {num_memcached} === ")
     subprocess.run(f"ssh {remote_host} {remote_mutilate_scripts}/{str(num_memcached).zfill(3)}mcd/load.sh".split())
-    subprocess.Popen(f"ssh {remote_host} bash -lc cd {remote_mutilate_scripts}/{str(num_memcached).zfill(3)}mcd/run.sh".split())
+    subprocess.Popen(f"ssh {remote_host} {remote_mutilate_scripts}/{str(num_memcached).zfill(3)}mcd/run.sh".split())
+    # subprocess.Popen(f"ssh {remote_host} bash -lc cd {remote_mutilate_scripts}/{str(num_memcached).zfill(3)}mcd/run.sh".split())
     print(f"=== [End] Running mutilate {num_memcached} === ")
 
-# def run_monitor():
-#     subprocess.run(f"ssh {remote_host} {remote_monitoring_client}/client_netdata ".split())
+def run_monitor(num_memcached):
+    print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
+    stdin_input = "1\n1\n"
+    # subprocess.run(f"ssh {remote_host} {remote_monitoring_client}/client_netdata ".split())
+    subprocess.run(
+        f"ssh {remote_host} {remote_monitoring_client}/client_netdata netdata-mcd{num_memcached}.csv".split(),
+        input=stdin_input,
+        text=True
+    )
+    print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
 def run_client(num_memcached):
     run_mutilate(num_memcached)
-    # run_monitor()
+    run_monitor(num_memcached)
 
 def run_server(num_memcached):
     run_memcached(num_memcached)
@@ -57,6 +66,7 @@ def main():
         print(f"############## Running {num_memcached} servers ##########################")
         run_server(num_memcached)
         # time.sleep(10)
+        # run_client(num_memcached)
         stop_server()
         # needed to pkill memcached completely
         time.sleep(5)
