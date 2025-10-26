@@ -19,8 +19,13 @@ def run_memcached(num_memcached):
     subprocess.Popen(f"./src/server/memcached/execute.sh {num_memcached}".split())
     print(f"=== [End] Running Memcached {num_memcached} instances === ")
 
+def stop_mutilate():
+    # subprocess.run(f"ssh {remote_host} sudo pkill mutilate".split())
+    subprocess.run(["ssh", remote_host, "sudo", "pkill", "mutilate"])
+
 def stop_memcached():
     subprocess.run("sudo pkill memcached".split())
+
 
 def run_netdata(num_memcached):
     print(f"=== [Start] Running Netdata {num_memcached} === ")
@@ -55,9 +60,10 @@ def run_client(num_memcached):
 def run_server(num_memcached):
     run_memcached(num_memcached)
     run_netdata(num_memcached)
-    run_client(num_memcached)
+    # run_client(num_memcached)
 
 def stop_server():
+    stop_mutilate()
     stop_memcached()
 
 def main():
@@ -66,7 +72,7 @@ def main():
         print(f"############## Running {num_memcached} servers ##########################")
         run_server(num_memcached)
         # time.sleep(10)
-        # run_client(num_memcached)
+        run_client(num_memcached)
         stop_server()
         # needed to pkill memcached completely
         time.sleep(5)
