@@ -24,8 +24,6 @@ def run_memcached(num_memcached):
     print(f"=== [End] Running Memcached {num_memcached} instances === ")
 
 def stop_mutilate():
-    # subprocess.run(f"ssh {remote_host} sudo pkill mutilate".split())
-    # subprocess.run(["ssh", remote_host, "sudo", "pkill", "mutilate"])
     subprocess.run(["ssh", remote_host, "pkill", "mutilate"])
 
 def stop_memcached():
@@ -43,21 +41,13 @@ def run_mutilate(num_memcached):
     print(f"=== [Start] Running mutilate {num_memcached} === ")
     subprocess.run(f"ssh {remote_host} {remote_mutilate_scripts}/{str(num_memcached).zfill(3)}mcd/load.sh".split())
     subprocess.Popen(f"ssh {remote_host} {remote_mutilate_scripts}/{str(num_memcached).zfill(3)}mcd/run.sh".split())
-    # subprocess.Popen(f"ssh {remote_host} bash -lc cd {remote_mutilate_scripts}/{str(num_memcached).zfill(3)}mcd/run.sh".split())
     print(f"=== [End] Running mutilate {num_memcached} === ")
 
 def run_monitor(num_memcached):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
     stdin_input = "1\n1\n"
-    # subprocess.run(f"ssh {remote_host} {remote_monitoring_client}/client_netdata ".split())
-    # subprocess.run(
-    #     f"ssh {remote_host} {remote_monitoring_client}/client_netdata netdata-mcd{num_memcached}.csv".split(),
-    #     input=stdin_input,
-    #     text=True
-    # )
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        # f"./client_netdata {output_dir}/netdata-{str(num_memcached).zfill(3)}.csv"
         f"./client_netdata {output_dir}/netdata-{num_memcached}mcd.csv"
     )
     subprocess.run(f"ssh {remote_host} {cmd}".split(),
