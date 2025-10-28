@@ -30,11 +30,12 @@ def stop_mutilate():
 def stop_memcached():
     subprocess.run("sudo pkill memcached".split())
 
-def run_netdata(num_memcached, netdata):
+def run_netdata(num_memcached, metric):
     print(f"=== [Start] Running Netdata {num_memcached} ===")
-    memcached_conf = f"{conf_root}/{str(num_memcached).zfill(3)}mcd/go.d/memcached.conf"
+    # memcached_conf = f"{conf_root}/{str(num_memcached).zfill(3)}mcd/go.d/memcached.conf"
+    memcached_conf = f"{conf_root}/netdata/num_mcd/{str(num_memcached).zfill(3)}-memcached.conf"
     print(f"{memcached_conf}")
-    subprocess.run(f"sudo cp {memcached_conf} /etc/netdata/go.d/memcached.conf".split())
+    # subprocess.run(f"sudo cp {memcached_conf} /etc/netdata/go.d/memcached.conf".split())
     subprocess.run(f"sudo cp {memcached_conf} /etc/netdata/go.d/memcached.conf".split())
     subprocess.run(f"sudo systemctl restart netdata".split())
     print(f"=== [End] Running Netdata {num_memcached} ===")
@@ -50,7 +51,7 @@ def run_monitor(num_memcached, metric):
     stdin_input = "1\n1\n"
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        f"./client_netdata {output_dir}/netdata-{num_memcached}mcd.csv"
+        f"./client_netdata {output_dir}/netdata-{metric}metrics-{num_memcached}mcd.csv"
     )
     subprocess.run(f"ssh {remote_host} {cmd}".split(),
                    input=stdin_input,
