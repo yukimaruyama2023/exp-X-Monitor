@@ -5,6 +5,7 @@ import os
 import itertools
 import signal
 import sys
+import datetime
 # import numpy as np
 
 remote_host = "hamatora"
@@ -14,6 +15,8 @@ remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 conf_root = "./conf"
 
 num_memcacheds = [1,5,10]
+timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+output_dir = f"{remote_data_root}/monitoring_latency/{timestamp}"
 
 def run_memcached(num_memcached):
     print(f"=== [Start] Running Memcached {num_memcached} instances === ")
@@ -27,7 +30,6 @@ def stop_mutilate():
 
 def stop_memcached():
     subprocess.run("sudo pkill memcached".split())
-
 
 def run_netdata(num_memcached):
     print(f"=== [Start] Running Netdata {num_memcached} === ")
@@ -55,11 +57,12 @@ def run_monitor(num_memcached):
     # )
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        "pwd &&"
-        f"./client_netdata {remote_data_root}"
+        # f"./client_netdata {output_dir}/netdata-{str(num_memcached).zfill(3)}.csv"
+        f"./client_netdata {output_dir}/netdata-{num_memcached}mcd.csv"
     )
-    subprocess.run(f"ssh {remote_host} {cmd}"split(),
+    subprocess.run(f"ssh {remote_host} {cmd}".split(),
                    input=stdin_input,
+                   text=True
     )
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
@@ -75,7 +78,17 @@ def stop_server():
     stop_mutilate()
     stop_memcached()
 
+def make_output_dir():
+    print(f"=== [Start] Creating output_dir: {output_dir} === ")
+    cmd = (
+        f"mkdir -p {output_dir} &&"
+    )
+    subprocess.run(f"ssh {remote_host} {cmd}".split())
+    print(f"=== [End] Creating output_dir: {output_dir} === ")
+
+
 def main():
+    make_output_dir()
     for num_memcached in num_memcacheds:
         print()
         print(f"############## Running {num_memcached} servers ##########################")
