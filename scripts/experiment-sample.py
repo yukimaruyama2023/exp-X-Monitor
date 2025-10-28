@@ -17,7 +17,23 @@ conf_root = "./conf"
 num_memcacheds = [1,5,10]
 metrics = ["user", "kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-output_dir = f"{remote_data_root}/monitoring_latency/{timestamp}"
+
+cpu_aff = "pin-netdata-core0"
+
+strict_comparison = False
+if strict_comparison:
+    user_plugin_conf  = f"{conf_root}/netdata/plugin/only-go-plugin.conf"
+    kernel_plugin_conf = f"{conf_root}/netdata/plugin/no-plugin.conf"
+else:
+    user_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
+    kernel_plugin_conf = f"{conf_root}/netdata/plugin/only-disable-go-plugin.conf"
+
+netdata_conf = {
+    "cpu_affinity": f"{conf_root}/netdata/cpu-affinity/{cpu_aff}.conf",
+    "user_plugin_conf": user_plugin_conf,
+    "kernel_plugin_conf": kernel_plugin_conf,
+}
+data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/{cpu_aff}/{timestamp}"
 
 def run_memcached(num_memcached):
     print(f"=== [Start] Running Memcached {num_memcached} instances ===")
@@ -35,8 +51,11 @@ def run_netdata(num_memcached, metric):
     # memcached_conf = f"{conf_root}/{str(num_memcached).zfill(3)}mcd/go.d/memcached.conf"
     memcached_conf = f"{conf_root}/netdata/num_mcd/{str(num_memcached).zfill(3)}-memcached.conf"
     print(f"{memcached_conf}")
-    # subprocess.run(f"sudo cp {memcached_conf} /etc/netdata/go.d/memcached.conf".split())
     subprocess.run(f"sudo cp {memcached_conf} /etc/netdata/go.d/memcached.conf".split())
+    if metric == "user":
+        subprocess.run(f"sudo cp {netdata_conf["user_plugin_conf"]} /etc/netdata/netdata.conf".split())
+    else:
+        subprocess.run(f"sudo cp {netdata_conf["kernel_plugin_conf"]} /etc/netdata/netdata.conf".split())
     subprocess.run(f"sudo systemctl restart netdata".split())
     print(f"=== [End] Running Netdata {num_memcached} ===")
 
@@ -48,10 +67,13 @@ def run_mutilate(num_memcached):
 
 def run_monitor(num_memcached, metric):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-    stdin_input = "1\n1\n"
+    if metric == "user":
+        stdin_input = "1\n1\n"
+    else:
+        stdin_input = "1\n0\n"
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        f"./client_netdata {output_dir}/netdata-{metric}metrics-{num_memcached}mcd.csv"
+        f"./client_netdata {data_dir}/netdata-{metric}metrics-{num_memcached}mcd.csv"
     )
     subprocess.run(f"ssh {remote_host} {cmd}".split(),
                    input=stdin_input,
@@ -71,16 +93,17 @@ def stop_server():
     stop_mutilate()
     stop_memcached()
 
-def make_output_dir():
-    print(f"=== [Start] Creating output_dir: {output_dir} === ")
+def setup():
+    print(f"=== [Start] Setup: Create data_dir and set cpu-affinity of netdata === ")
     cmd = (
-        f"mkdir -p {output_dir} &&"
+        f"mkdir -p {data_dir} &&"
     )
     subprocess.run(f"ssh {remote_host} {cmd}".split())
-    print(f"=== [End] Creating output_dir: {output_dir} === ")
+    subprocess.run(f"sudo cp {netdata_conf["cpu_affinity"]} /etc/systemd/system/netdata.service.d/override.conf".split())
+    print(f"=== [End] Setup: Create data_dir and set cpu-affinity of netdata === ")
 
 def main():
-    make_output_dir()
+    setup()
     for metric in metrics:
         for num_memcached in num_memcacheds:
             print()
