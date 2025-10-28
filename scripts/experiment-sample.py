@@ -73,7 +73,7 @@ def run_monitor(num_memcached, metric):
         stdin_input = "1\n0\n"
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        f"./client_netdata {data_dir}/netdata-{metric}metrics-{num_memcached}mcd.csv"
+        f"./client_netdata {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
     )
     subprocess.run(f"ssh {remote_host} {cmd}".split(),
                    input=stdin_input,
@@ -94,20 +94,29 @@ def stop_server():
     stop_memcached()
 
 def setup():
-    print(f"=== [Start] Setup: Create data_dir and set cpu-affinity of netdata === ")
+    print(f"=== [Start] Setup: cpu-affinity of netdata ===")
+    subprocess.run(f"sudo cp {netdata_conf["cpu_affinity"]} /etc/systemd/system/netdata.service.d/override.conf".split())
+    print(f"=== [End] Setup: cpu-affinity of netdata ===")
+
+def make_output_dir(num_memcached):
+    print(f"=== [Start] Making output_dir {data_dir}/{str(num_memcached).zfill(3)}mcd ===")
     cmd = (
-        f"mkdir -p {data_dir} &&"
+        f"mkdir -p {data_dir}/{str(num_memcached).zfill(3)}mcd"
     )
     subprocess.run(f"ssh {remote_host} {cmd}".split())
-    subprocess.run(f"sudo cp {netdata_conf["cpu_affinity"]} /etc/systemd/system/netdata.service.d/override.conf".split())
-    print(f"=== [End] Setup: Create data_dir and set cpu-affinity of netdata === ")
+    print(f"=== [End] Making output_dir {data_dir}/{str(num_memcached).zfill(3)}mcd ===")
 
 def main():
     setup()
     for metric in metrics:
+        print()
+        print(f"############################################################################")
+        print(f"##################### Monitoring {metric} metrics ##########################")
+        print(f"############################################################################")
         for num_memcached in num_memcacheds:
             print()
             print(f"############## Running {num_memcached} servers ##########################")
+            make_output_dir(num_memcached)
             run_server(num_memcached, metric)
             run_client(num_memcached, metric)
             stop_server()
