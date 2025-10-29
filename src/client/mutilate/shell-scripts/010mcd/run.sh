@@ -24,4 +24,4 @@
   -s 10.10.10.1:11218 \
   -s 10.10.10.1:11219 \
   -s 10.10.10.1:11220 \
-  -T 48 -c 1 -q 0 -u 0 -i exponential:1 -t 80 --noload --depth 1 --records 1000000
+  -T 48 -c 1 -q 0 -u 0 -i exponential:1 -t 120 --noload --depth 1 --records 1000000
