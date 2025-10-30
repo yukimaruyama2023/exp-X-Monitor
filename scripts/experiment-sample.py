@@ -20,9 +20,12 @@ x_monitor_intervals = [1, 0.1, 0.01]
 metrics = ["user", "kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-cpu_aff = "pin-netdata-core0"
 
-strict_comparison = False
+############################################ Configuratin ###############################################
+strict_comparison = False # default is False, which means almost all plugin runs
+ntd_mcd_in_allcores = True # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
+#########################################################################################################
+
 if strict_comparison:
     user_plugin_conf  = f"{conf_root}/netdata/plugin/only-go-plugin.conf"
     kernel_plugin_conf = f"{conf_root}/netdata/plugin/no-plugin.conf"
@@ -30,17 +33,27 @@ else:
     user_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
     kernel_plugin_conf = f"{conf_root}/netdata/plugin/only-disable-go-plugin.conf"
 
+if ntd_mcd_in_allcores:
+    mcd_cpu_aff = "all-core-execute.sh"
+    netdata_cpu_aff = "let-netdata-allcore.conf"
+else:
+    mcd_cpu_aff = "pin-core1-5-execute.sh"
+    netdata_cpu_aff = "pin-netdata-core0.conf"
+
+
 netdata_conf = {
-    "cpu_affinity": f"{conf_root}/netdata/cpu-affinity/{cpu_aff}.conf",
+    "cpu_affinity": f"{conf_root}/netdata/cpu-affinity/{netdata_cpu_aff}",
     "user_plugin_conf": user_plugin_conf,
     "kernel_plugin_conf": kernel_plugin_conf,
 }
-data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/{cpu_aff}/{timestamp}"
+
+data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/{timestamp}"
+
 
 def run_memcached(num_memcached):
-    print(f"=== [Start] Running Memcached {num_memcached} instances ===")
-    subprocess.Popen(f"./src/server/memcached/execute.sh {num_memcached}".split())
-    print(f"=== [End] Running Memcached {num_memcached} instances ===")
+    print(f"=== [Start] Running Memcached {num_memcached} instances, affinity is {mcd_cpu_aff} ===")
+    subprocess.Popen(f"./conf/memcached/{mcd_cpu_aff} {num_memcached}".split())
+    print(f"=== [End] Running Memcached {num_memcached} instances, affinity is {mcd_cpu_aff} ===")
 
 def stop_mutilate():
     subprocess.run(["ssh", remote_host, "pkill", "mutilate"])
@@ -128,7 +141,6 @@ def run_x_monitor_client(num_memcached, metric, x_monitor_interval):
     run_mutilate(num_memcached)
     run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval)
     detach_xdp()
-    
 
 def stop_server():
     stop_mutilate()
