@@ -8,7 +8,8 @@ import sys
 import datetime
 
 remote_host = "hamatora"
-remote_mutilate_script_latency = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/exp-latency/"
+# not latency but throughput
+remote_mutilate_script_throughput = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/exp-throughput/"
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
 remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
@@ -46,7 +47,8 @@ netdata_conf = {
     "kernel_plugin_conf": kernel_plugin_conf,
 }
 
-data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/{timestamp}"
+# change output data_dir
+data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/{timestamp}"
 
 
 def run_memcached(num_memcached):
@@ -54,8 +56,12 @@ def run_memcached(num_memcached):
     subprocess.Popen(f"./conf/memcached/{mcd_cpu_aff} {num_memcached}".split())
     print(f"=== [End] Running Memcached {num_memcached} instances, affinity is {mcd_cpu_aff} ===")
 
-def stop_mutilate():
-    subprocess.run(["ssh", remote_host, "pkill", "mutilate"])
+# kill x_monitor not mutilate
+def stop_monitoring_client_for_netdata():
+    subprocess.run(["ssh", remote_host, "pkill", "client_netdata"])
+
+def stop_monitoring_client_for_x_monitor():
+    subprocess.run(["ssh", remote_host, "pkill", "client_x-monitor"])
 
 def stop_memcached():
     subprocess.run("sudo pkill memcached".split())
@@ -73,10 +79,28 @@ def run_netdata(num_memcached, metric):
     subprocess.run(f"sudo systemctl restart netdata".split())
     print(f"=== [End] Running Netdata {num_memcached} ===")
 
-def run_mutilate(num_memcached):
+def run_mutilate_for_netdata(num_memcached, metric):
     print(f"=== [Start] Running mutilate {num_memcached} ===")
-    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
-    subprocess.Popen(f"ssh {remote_host} {remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-run.sh".split())
+    # 1. execute path is remote_mutilate_script_throughput not ..latency
+    # 2. specify output file
+    cmd = (
+        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
+    )
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
+    subprocess.Popen(f"ssh {remote_host} {cmd}".split())
+
+    print(f"=== [End] Running mutilate {num_memcached} ===")
+
+def run_mutilate_for_x_monitor(num_memcached, metric, x_monitor_interval):
+    print(f"=== [Start] Running mutilate {num_memcached} ===")
+    # 1. execute path is remote_mutilate_script_throughput not ..latency
+    # 2. specify output file
+    cmd = (
+        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
+    )
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
+    subprocess.Popen(f"ssh {remote_host} {cmd}".split())
+
     print(f"=== [End] Running mutilate {num_memcached} ===")
 
 def run_netdata_client_monitor(num_memcached, metric):
@@ -87,7 +111,8 @@ def run_netdata_client_monitor(num_memcached, metric):
         stdin_input = "1\n0\n"
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        f"./client_netdata {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
+        # output file is test.csv
+        f"./client_netdata test.csv"
     )
     subprocess.run(f"ssh {remote_host} {cmd}".split(),
                    input=stdin_input,
@@ -115,7 +140,8 @@ def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
         stdin_input = "0.01\n"
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        f"./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
+        # output file is test.csv
+        f"./client_x-monitor test.csv"
     )
     subprocess.run(f"ssh {remote_host} {cmd}".split(),
                    input=stdin_input,
@@ -129,20 +155,26 @@ def run_netdata_server(num_memcached, metric):
     run_netdata(num_memcached, metric)
 
 def run_netdata_client(num_memcached, metric):
-    run_mutilate(num_memcached)
+    # firstly run x_monitor, then run mutilate for throughput of mutilate
     run_netdata_client_monitor(num_memcached, metric)
+    run_mutilate_for_netdata(num_memcached, metric)
 
 def run_x_monitor_server(num_memcached, metric):
     run_memcached(num_memcached)
 
 def run_x_monitor_client(num_memcached, metric, x_monitor_interval):
     load_xdp(metric)
-    run_mutilate(num_memcached)
+    # firstly run x_monitor, then run mutilate for throughput of mutilate
     run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval)
+    run_mutilate_for_x_monitor(num_memcached, metric, x_monitor_interval)
     detach_xdp()
 
-def stop_server():
-    stop_mutilate()
+def stop_server_for_netdata():
+    stop_monitoring_client_for_netdata()
+    stop_memcached()
+
+def stop_server_for_x_monitor():
+    stop_monitoring_client_for_x_monitor()
     stop_memcached()
 
 def setup():
@@ -170,7 +202,7 @@ def netdata_monitoring():
             make_output_dir(num_memcached)
             run_netdata_server(num_memcached, metric)
             run_netdata_client(num_memcached, metric)
-            stop_server()
+            stop_server_for_netdata()
             # needed to pkill memcached completely
             time.sleep(5)
 
@@ -187,7 +219,7 @@ def x_monitor_monitoring():
                 print(f"############## Interval {x_monitor_interval} ##########################")
                 run_x_monitor_server(num_memcached, metric)
                 run_x_monitor_client(num_memcached, metric, x_monitor_interval)
-                stop_server()
+                stop_server_for_x_monitor()
                 # needed to pkill memcached completely
                 time.sleep(5)
 
