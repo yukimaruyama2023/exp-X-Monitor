@@ -79,29 +79,6 @@ def run_netdata(num_memcached, metric):
     subprocess.run(f"sudo systemctl restart netdata".split())
     print(f"=== [End] Running Netdata {num_memcached} ===")
 
-def run_mutilate_for_netdata(num_memcached, metric):
-    print(f"=== [Start] Running mutilate {num_memcached} ===")
-    # 1. execute path is remote_mutilate_script_throughput not ..latency
-    # 2. specify output file
-    cmd = (
-        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
-    )
-    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
-    subprocess.Popen(f"ssh {remote_host} {cmd}".split())
-
-    print(f"=== [End] Running mutilate {num_memcached} ===")
-
-def run_mutilate_for_x_monitor(num_memcached, metric, x_monitor_interval):
-    print(f"=== [Start] Running mutilate {num_memcached} ===")
-    # 1. execute path is remote_mutilate_script_throughput not ..latency
-    # 2. specify output file
-    cmd = (
-        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
-    )
-    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
-    subprocess.Popen(f"ssh {remote_host} {cmd}".split())
-
-    print(f"=== [End] Running mutilate {num_memcached} ===")
 
 def run_netdata_client_monitor(num_memcached, metric):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
@@ -114,10 +91,15 @@ def run_netdata_client_monitor(num_memcached, metric):
         # output file is test.csv
         f"./client_netdata test.csv"
     )
-    subprocess.run(f"ssh {remote_host} {cmd}".split(),
-                   input=stdin_input,
-                   text=True
-    )
+    # subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
+    #                input=stdin_input,
+    #                text=True
+    # )
+    proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
+                        stdin=subprocess.PIPE,
+                        text=True)
+    proc.stdin.write(stdin_input)
+    proc.stdin.close()
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
 def load_xdp(metric):
@@ -143,20 +125,49 @@ def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
         # output file is test.csv
         f"./client_x-monitor test.csv"
     )
-    subprocess.run(f"ssh {remote_host} {cmd}".split(),
-                   input=stdin_input,
-                   text=True
-    )
+    # subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
+    #                input=stdin_input,
+    #                text=True
+    # )
+    proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
+                        stdin=subprocess.PIPE,
+                        text=True)
+    proc.stdin.write(stdin_input)
+    proc.stdin.close()
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
+def run_mutilate_for_netdata(num_memcached, metric):
+    print(f"=== [Start] Running mutilate {num_memcached} ===")
+    # 1. execute path is remote_mutilate_script_throughput not ..latency
+    # 2. specify output file
+    cmd = (
+        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
+    )
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
+    run_netdata_client_monitor(num_memcached, metric)
+    subprocess.run(f"ssh {remote_host} {cmd}".split())
+
+    print(f"=== [End] Running mutilate {num_memcached} ===")
+
+def run_mutilate_for_x_monitor(num_memcached, metric, x_monitor_interval):
+    print(f"=== [Start] Running mutilate {num_memcached} ===")
+    # 1. execute path is remote_mutilate_script_throughput not ..latency
+    # 2. specify output file
+    cmd = (
+        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
+    )
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
+    run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval)
+    subprocess.run(f"ssh {remote_host} {cmd}".split())
+
+    print(f"=== [End] Running mutilate {num_memcached} ===")
 
 def run_netdata_server(num_memcached, metric):
     run_memcached(num_memcached)
     run_netdata(num_memcached, metric)
 
 def run_netdata_client(num_memcached, metric):
-    # firstly run x_monitor, then run mutilate for throughput of mutilate
-    run_netdata_client_monitor(num_memcached, metric)
+    # monitoring client is called inside run_mutilate_for_netdata
     run_mutilate_for_netdata(num_memcached, metric)
 
 def run_x_monitor_server(num_memcached, metric):
@@ -164,8 +175,7 @@ def run_x_monitor_server(num_memcached, metric):
 
 def run_x_monitor_client(num_memcached, metric, x_monitor_interval):
     load_xdp(metric)
-    # firstly run x_monitor, then run mutilate for throughput of mutilate
-    run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval)
+    # monitoring client is called inside run_mutilate_for_x_monitor
     run_mutilate_for_x_monitor(num_memcached, metric, x_monitor_interval)
     detach_xdp()
 
