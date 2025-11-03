@@ -8,7 +8,7 @@ import sys
 import datetime
 
 remote_host = "hamatora"
-remote_mutilate_scripts = "/home/maruyama/workspace/exp-X-Monitor/src/client/mutilate/shell-scripts/"
+remote_mutilate_script_latency = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/exp-latency/"
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
 remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
@@ -75,8 +75,8 @@ def run_netdata(num_memcached, metric):
 
 def run_mutilate(num_memcached):
     print(f"=== [Start] Running mutilate {num_memcached} ===")
-    subprocess.run(f"ssh {remote_host} {remote_mutilate_scripts}/{str(num_memcached).zfill(3)}mcd/load.sh".split())
-    subprocess.Popen(f"ssh {remote_host} {remote_mutilate_scripts}/{str(num_memcached).zfill(3)}mcd/run.sh".split())
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
+    subprocess.Popen(f"ssh {remote_host} {remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-run.sh".split())
     print(f"=== [End] Running mutilate {num_memcached} ===")
 
 def run_netdata_client_monitor(num_memcached, metric):
