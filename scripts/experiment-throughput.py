@@ -6,7 +6,6 @@ import itertools
 import signal
 import sys
 import datetime
-# import numpy as np
 
 remote_host = "hamatora"
 remote_mutilate_scripts = "/home/maruyama/workspace/exp-X-Monitor/src/client/mutilate/shell-scripts/"
@@ -22,8 +21,8 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
 ############################################ Configuratin ###############################################
-strict_comparison = False # default is False, which means almost all plugin runs
-ntd_mcd_in_allcores = True # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
+strict_comparison = True # default is False, which means almost all plugin runs
+ntd_mcd_in_allcores = False # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
 #########################################################################################################
 
 if strict_comparison:
