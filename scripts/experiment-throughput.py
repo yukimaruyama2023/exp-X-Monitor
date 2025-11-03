@@ -141,7 +141,7 @@ def run_mutilate_for_netdata(num_memcached, metric):
     # 1. execute path is remote_mutilate_script_throughput not ..latency
     # 2. specify output file
     cmd = (
-        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
+        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.txt"
     )
     subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
     run_netdata_client_monitor(num_memcached, metric)
@@ -154,7 +154,7 @@ def run_mutilate_for_x_monitor(num_memcached, metric, x_monitor_interval):
     # 1. execute path is remote_mutilate_script_throughput not ..latency
     # 2. specify output file
     cmd = (
-        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
+        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.txt"
     )
     subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
     run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval)
