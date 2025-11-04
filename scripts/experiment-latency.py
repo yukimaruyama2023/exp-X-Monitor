@@ -55,7 +55,7 @@ def run_memcached(num_memcached):
     print(f"=== [End] Running Memcached {num_memcached} instances, affinity is {mcd_cpu_aff} ===")
 
 def stop_mutilate():
-    subprocess.run(["ssh", remote_host, "pkill", "mutilate"])
+    subprocess.run(["ssh", remote_host, "pkill", "-f", "mutilate"])
 
 def stop_memcached():
     subprocess.run("sudo pkill memcached".split())

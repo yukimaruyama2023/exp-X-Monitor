@@ -22,7 +22,7 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
 ############################################ Configuratin ###############################################
-strict_comparison = True # default is False, which means almost all plugin runs
+strict_comparison = False # default is False, which means almost all plugin runs
 ntd_mcd_in_allcores = False # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
 #########################################################################################################
 
@@ -58,10 +58,10 @@ def run_memcached(num_memcached):
 
 # kill x_monitor not mutilate
 def stop_monitoring_client_for_netdata():
-    subprocess.run(["ssh", remote_host, "pkill", "client_netdata"])
+    subprocess.run(["ssh", remote_host, "pkill", "-f", "client_netdata"])
 
 def stop_monitoring_client_for_x_monitor():
-    subprocess.run(["ssh", remote_host, "pkill", "client_x-monitor"])
+    subprocess.run(["ssh", remote_host, "pkill", "-f", "client_x-monitor"])
 
 def stop_memcached():
     subprocess.run("sudo pkill memcached".split())
@@ -235,8 +235,8 @@ def x_monitor_monitoring():
 
 def main():
     setup()
-    x_monitor_monitoring()
     netdata_monitoring()
+    x_monitor_monitoring()
 
 if __name__ == "__main__":
     main()
