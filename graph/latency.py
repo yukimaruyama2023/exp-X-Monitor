@@ -1,80 +1,200 @@
+import argparse
+import glob
+import os
+import re
+import sys
+from typing import List, Tuple
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-micron_unicode = '\u03BC'
-METRIC_NAME = "system"
-METRICS_UNIT = "ms"
+plt.rcParams["font.size"] = 22
 
 
-def plot_latency(csv_path: str, y_max: int, skiprows: int = 0) -> None:
+# ---------- 基本ユーティリティ ----------
+
+def load_latencies_ms(path: str, col: int = 2, skiprows: int = 0) -> np.ndarray:
     """
-    Plot latency over elapsed time from a CSV file.
-
-    Parameters
-    ----------
-    csv_path : str
-        Path to the CSV file.
-    y_max : int
-        Upper limit for Y-axis in milliseconds.
-    skiprows : int, optional
-        Number of header rows to skip when loading CSV, by default 0.
-
-    Notes
-    -----
-    - Expects the CSV to have time in seconds at column index 1,
-      and latency in microseconds at column index 2.
+    CSVから指定列(0-based)を読み、μs→msに変換して昇順で返す。
+    ヘッダ行がある場合は skiprows を指定。
     """
-    # データの読み込み（time[s]=col1, latency[us]=col2）
-    data = np.loadtxt(csv_path, delimiter=",", skiprows=skiprows, usecols=(1, 2))
-    data = np.transpose(data)
+    try:
+        arr = np.loadtxt(path, delimiter=",", usecols=col, skiprows=skiprows)
+    except Exception as e:
+        # ヘッダあり・混入データに強い fallback
+        arr = np.genfromtxt(path, delimiter=",", usecols=col, skip_header=skiprows)
+    arr_ms = arr / 1000.0  # μs → ms
+    return np.sort(arr_ms)
 
-    TIMESEC_COL = 0
-    LATENCY_COL = 1
 
-    plt.rcParams["font.size"] = 23
+def cdf(arr: np.ndarray) -> np.ndarray:
+    """昇順配列 arr に対する CDF 値(0..1)を返す。"""
+    n = len(arr)
+    if n <= 1:
+        return np.array([1.0])
+    return np.arange(n) / (n - 1)
 
-    fig, ax1 = plt.subplots()
+def resolve_mcd_dir(base_dir: str, mcd: int) -> str:
+    """
+    base_dir がタイムスタンプ階層を指している前提で、
+    その直下の {mcd:03d}mcd ディレクトリを返す。
+    もし base_dir が既に .../NNNmcd を含んでいたら、そのまま返す。
+    """
+    # 末尾  /123mcd[/]  に既に一致していればそのまま
+    if re.search(rf"[\\/]{mcd:03d}mcd[\\/]?$", base_dir):
+        return base_dir
+    # 末尾が任意の NNNmcd なら、そのまま（ユーザーが明示指定したケース）
+    if re.search(r"[\\/]\d{3}mcd[\\/]?$", base_dir):
+        return base_dir
+    # それ以外は mcd を付ける
+    return os.path.join(base_dir, f"{mcd:03d}mcd")
 
-    # パーセンタイル計算（μsのまま）
-    latency_us = data[LATENCY_COL]
-    percentiles = np.percentile(latency_us, [50, 90, 99])
-    print(f"50th percentile latency: {percentiles[0]} us")
-    print(f"90th percentile latency: {percentiles[1]} us")
-    print(f"99th percentile latency: {percentiles[2]} us")
+def find_xmonitor_files(base_dir: str, kind: str, mcd: int) -> List[Tuple[float, str]]:
+    """
+    kind: 'usermetrics' or 'kernelmetrics'
+    戻り値: [(interval_sec, filepath)] を interval 昇順で返す
+    """
+    pattern = os.path.join(base_dir, f"xmonitor-{kind}-{mcd}mcd-interval*.csv")
+    files = glob.glob(pattern)
+    found: List[Tuple[float, str]] = []
+    for f in files:
+        m = re.search(r"interval([0-9.]+)\.csv$", f)
+        if m:
+            sec = float(m.group(1))
+            found.append((sec, f))
+    found.sort(key=lambda x: x[0])
+    return found
 
-    # 経過時間と遅延時間
-    elapsed = data[TIMESEC_COL] - data[TIMESEC_COL][0]
-    latency_ms = latency_us / 1000.0  # ms に変換
 
-    # プロット
-    ax1.plot(
-        elapsed,
-        latency_ms,
-        label="latency of monitoring\nmessage",
-        color="orange",
-        marker="^",
+def plot_one(ax, curves, xmax: float):
+    """
+    curves: iterable of (x_values, y_values, label)
+    """
+    markers = ['o', '*', '^', 'x', 's', 'd']
+    for i, (x, y, label) in enumerate(curves):
+        ax.plot(x, y, marker=markers[i % len(markers)], markersize=4, label=label)
+
+    # 90% / 99% 水平線
+    ax.axhline(y=0.9, linestyle='--', linewidth=1, dashes=(10, 5), color='black')
+    ax.axhline(y=0.99, linestyle='--', linewidth=1, dashes=(10, 5), color='black')
+
+    ax.set_ylim((0.90, 1.0))
+    ax.set_xlim((-0.1, xmax))
+    ax.set_yticks([0.90, 0.99, 1.00], ["90%", "99%", "100%"])
+    ax.set_xlabel("latency [ms]")
+    ax.set_ylabel("percentile")
+    # ax.legend(loc='lower right', labelspacing=0, fontsize=17)
+    ax.legend(loc='lower right', labelspacing=0, fontsize=14)
+
+
+# ---------- 引数とエントリーポイント分離（Jupyter/CLI両対応） ----------
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Plot CDFs for user/kernel metrics (X-Monitor vs Netdata)."
     )
+    parser.add_argument("--dir", default=".", help="directory containing CSV files")
+    parser.add_argument("--mcd", type=int, default=1,
+                        help="mcd count used in filenames (e.g., 1 for *-1mcd-*)")
+    parser.add_argument("--xmax", type=float, default=30.0, help="x-axis max (ms)")
+    parser.add_argument("--col", type=int, default=2, help="latency column index (0-based)")
+    parser.add_argument("--skiprows", type=int, default=0, help="header rows to skip")
+    parser.add_argument("--save", action="store_true", help="save figures as PNG instead of showing")
+    return parser.parse_args(argv)
 
-    ax1.set_xlabel("elapsed time [s]")
-    ax1.set_ylabel("latency [ms]")
-    ax1.set_ylim(0, y_max)
+def main_impl(args) -> None:
+    base_ts = args.dir        # タイムスタンプ階層（ユーザー指定）
+    mcd = args.mcd
+    col = args.col
+    skiprows = args.skiprows
 
-    ax1.grid(axis="y")  # 横線だけ
-    handler, label = ax1.get_legend_handles_labels()
-    ax1.legend(handler, label, loc="upper right", fontsize="small")
+    # ← ここで実際に探索するルートに変換（.../NNNmcd）
+    search_root = resolve_mcd_dir(base_ts, mcd)
 
-    plt.show()
+    # 必須ファイル（Netdata）: すべて search_root を基準に探す
+    net_user = os.path.join(search_root, f"netdata-usermetrics-{mcd}mcd.csv")
+    net_kernel = os.path.join(search_root, f"netdata-kernelmetrics-{mcd}mcd.csv")
+
+    missing = [p for p in [net_user, net_kernel] if not os.path.exists(p)]
+    if missing:
+        print("Missing required file(s) under:", search_root)
+        for m in missing:
+            print("  -", m)
+        sys.exit(1)
+
+    # X-Monitor 側（interval* を自動検出）
+    xmon_user = find_xmonitor_files(search_root, "usermetrics", mcd)
+    xmon_kernel = find_xmonitor_files(search_root, "kernelmetrics", mcd)
+    if len(xmon_user) == 0 or len(xmon_kernel) == 0:
+        print("No xmonitor files found under:", search_root)
+        print("Expected patterns like:")
+        print(f"  {os.path.join(search_root, f'xmonitor-usermetrics-{mcd}mcd-interval*.csv')}")
+        print(f"  {os.path.join(search_root, f'xmonitor-kernelmetrics-{mcd}mcd-interval*.csv')}")
+        sys.exit(1)
+    # 読み込み（User metrics）
+    curves_user = []
+    for sec, path in xmon_user:
+        lat = load_latencies_ms(path, col, skiprows)
+        p = cdf(lat)
+        label = f"X-Monitor ({int(sec*1000)} ms)"
+        curves_user.append((lat, p, label))
+    # Netdata (固定 1000ms として扱う)
+    lat_net_user = load_latencies_ms(net_user, col, skiprows)
+    p_net_user = cdf(lat_net_user)
+    curves_user.append((lat_net_user, p_net_user, "Netdata  (1000 ms)"))
+
+    # 読み込み（Kernel metrics）
+    curves_kernel = []
+    for sec, path in xmon_kernel:
+        lat = load_latencies_ms(path, col, skiprows)
+        p = cdf(lat)
+        label = f"X-Monitor ({int(sec*1000)} ms)"
+        curves_kernel.append((lat, p, label))
+    lat_net_kernel = load_latencies_ms(net_kernel, col, skiprows)
+    p_net_kernel = cdf(lat_net_kernel)
+    curves_kernel.append((lat_net_kernel, p_net_kernel, "Netdata  (1000 ms)"))
+
+    # 描画（2 図）
+    print("User metrics CDF")
+    fig1, ax1 = plt.subplots(figsize=(7, 5))
+    plot_one(ax1, curves_user, xmax=args.xmax)
+    # ax1.set_title("User metrics CDF")
+
+    print("Kernel metrics CDF")
+    fig2, ax2 = plt.subplots(figsize=(7, 5))
+    plot_one(ax2, curves_kernel, xmax=args.xmax)
+    # ax2.set_title("Kernel metrics CDF")
+
+    fig1.tight_layout()
+    fig2.tight_layout()
+
+    if args.save:
+        out1 = os.path.join(args.dir, f"cdf-usermetrics-{mcd}mcd.png")
+        out2 = os.path.join(args.dir, f"cdf-kernelmetrics-{mcd}mcd.png")
+        fig1.savefig(out1, dpi=200)
+        fig2.savefig(out2, dpi=200)
+        print(f"Saved: {out1}")
+        print(f"Saved: {out2}")
+    else:
+        plt.show()
 
 
-def main():
-    import argparse
-    parser = argparse.ArgumentParser(description="Plot latency from CSV.")
-    parser.add_argument("csv_path", help="Path to CSV file")
-    parser.add_argument("--ymax", type=int, required=True, help="Max value for Y-axis (ms)")
-    parser.add_argument("--skiprows", type=int, default=0, help="Header rows to skip")
-    args = parser.parse_args()
-    plot_latency(args.csv_path, args.ymax, args.skiprows)
+def main_cli(argv=None) -> None:
+    """コマンドライン用エントリーポイント"""
+    args = parse_args(argv)
+    main_impl(args)
+
+
+def run_plot(dir=".", mcd=1, xmax=30.0, col=2, skiprows=0, save=False) -> None:
+    """
+    Notebook / 他コードからの呼び出し用API。
+    例: run_plot(dir=".", mcd=1, xmax=30, save=True)
+    """
+    argv = ["--dir", str(dir), "--mcd", str(mcd), "--xmax", str(xmax), "--col", str(col), "--skiprows", str(skiprows)]
+    if save:
+        argv.append("--save")
+    main_cli(argv)
 
 
 if __name__ == "__main__":
-    main()
+    main_cli()
