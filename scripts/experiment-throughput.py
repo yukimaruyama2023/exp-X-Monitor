@@ -162,6 +162,19 @@ def run_mutilate_for_x_monitor(num_memcached, metric, x_monitor_interval):
 
     print(f"=== [End] Running mutilate {num_memcached} ===")
 
+def run_mutilate_for_no_monitoring(num_memcached):
+    print(f"=== [Start] Running mutilate {num_memcached} ===")
+    # 1. execute path is remote_mutilate_script_throughput not ..latency
+    # 2. specify output file
+    cmd = (
+        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{str(num_memcached).zfill(3)}mcd/no_monitoring-{num_memcached}mcd.txt"
+    )
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
+    subprocess.run(f"ssh {remote_host} {cmd}".split())
+
+    print(f"=== [End] Running mutilate {num_memcached} ===")
+
+
 def run_netdata_server(num_memcached, metric):
     run_memcached(num_memcached)
     run_netdata(num_memcached, metric)
@@ -219,9 +232,9 @@ def netdata_monitoring():
 def x_monitor_monitoring():
     for metric in metrics:
         print()
-        print(f"############################################################################")
+        print(f"#######################################################################################")
         print(f"##################### X-Monitor: Monitoring {metric} metrics ##########################")
-        print(f"############################################################################")
+        print(f"#######################################################################################")
         for num_memcached in num_memcacheds:
             print(f"############## Running {num_memcached} servers ##########################")
             make_output_dir(num_memcached)
@@ -233,8 +246,21 @@ def x_monitor_monitoring():
                 # needed to pkill memcached completely
                 time.sleep(5)
 
+def no_monitoring():
+    print()
+    print(f"############################################################################")
+    print(f"############################# No-Monitoring ################################")
+    print(f"############################################################################")
+    for num_memcached in num_memcacheds:
+        make_output_dir(num_memcached)
+        run_memcached(num_memcached)
+        run_mutilate_for_no_monitoring(num_memcached)
+        stop_memcached()
+        time.sleep(5)
+
 def main():
     setup()
+    no_monitoring()
     netdata_monitoring()
     x_monitor_monitoring()
 
