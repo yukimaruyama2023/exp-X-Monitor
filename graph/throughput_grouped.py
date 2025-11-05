@@ -47,35 +47,6 @@ def collect_means(base_dir, metric, nums):
     return means
 
 
-# def plot_grouped(base_dir, metric, nums=[1,5,10]):
-#     means = collect_means(base_dir, metric, nums)
-
-#     colors = {
-#         "No-Monitoring": "#999999",
-#         "Netdata-1000ms": "coral",
-#         "X-Monitor-1000ms": "#1f77b4",
-#         "X-Monitor-100ms": "#4aa3df",
-#         "X-Monitor-10ms": "#88c5f2",
-#     }
-
-#     x = np.arange(len(nums))
-#     width = 0.13
-#     offsets = np.linspace(-width*2, width*2, len(LABELS))
-
-#     plt.figure(figsize=(10, 7))
-#     # plt.figure(figsize=(12, 5))
-#     for i, label in enumerate(LABELS):
-#         plt.bar(x + offsets[i], means[label], width=width, color=colors[label], label=label)
-
-#     plt.xticks(x, [f"{n}mcd" for n in nums], fontsize=50)
-#     plt.tick_params(axis='y', labelsize=40)
-#     plt.yticks(fontsize=40)
-#     plt.ylabel("Throughput (K ops/sec)", fontsize=20)
-#     plt.grid(axis="y", linestyle="--", alpha=0.4)
-#     plt.legend(fontsize=12)
-#     plt.tight_layout()
-#     plt.show()
-
 def plot_grouped(base_dir, metric, nums=[1,5,10]):
     means = collect_means(base_dir, metric, nums)
 
@@ -91,18 +62,17 @@ def plot_grouped(base_dir, metric, nums=[1,5,10]):
     width = 0.13
     offsets = np.linspace(-width*2, width*2, len(LABELS))
 
-    fig, ax = plt.subplots(figsize=(10, 7))
-
+    plt.figure(figsize=(10, 7))
+    # plt.figure(figsize=(12, 5))
     for i, label in enumerate(LABELS):
-        ax.bar(x + offsets[i], means[label], width=width, color=colors[label], label=label)
+        plt.bar(x + offsets[i], means[label], width=width, color=colors[label], label=label)
 
-    ax.set_xticks(x)
-    ax.set_xticklabels([f"{n}mcd" for n in nums], fontsize=45)
-    ax.tick_params(axis='y', labelsize=45)
-
-    ax.set_ylabel("Throughput (K ops/sec)", fontsize=40)
-    ax.grid(axis="y", linestyle="--", alpha=0.4)
-    ax.legend(fontsize=28, loc='upper center', ncol=3)
-
+    plt.xticks(x, [f"{n} mcd" for n in nums], fontsize=30)
+    plt.tick_params(axis='y', labelsize=30)
+    plt.yticks(fontsize=30)
+    plt.ylabel("Throughput (K ops/sec)", fontsize=30)
+    plt.grid(axis="y", linestyle="--", alpha=0.4)
+    plt.legend(fontsize=16)
     plt.tight_layout()
     plt.show()
+
