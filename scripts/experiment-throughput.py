@@ -23,7 +23,7 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 ############################################ Configuratin ###############################################
 strict_comparison = False # default is False, which means almost all plugin runs
-mcd_in_allcores_for_x_monitor = True # default is False; mcd for x_monitor runs in core 1-5, NOTE: you cannot configure mcd and netdata cpu affinity unlike latency experiment
+mcd_in_allcores_for_x_monitor = False # default is False; mcd for x_monitor runs in core 1-5, NOTE: you cannot configure mcd and netdata cpu affinity unlike latency experiment
 cnts = 10
 #########################################################################################################
 
