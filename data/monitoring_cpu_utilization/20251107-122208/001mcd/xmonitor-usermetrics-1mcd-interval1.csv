@@ -1,0 +1,186 @@
+          <idle>-0       [005] ..s2. 1332681.144264: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332681.144272: bpf_trace_printk: Elapsed cycles are 56976
+          <idle>-0       [005] ..s2. 1332682.144405: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332682.144412: bpf_trace_printk: Elapsed cycles are 53702
+          <idle>-0       [005] ..s2. 1332683.145110: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332683.145116: bpf_trace_printk: Elapsed cycles are 58210
+   kworker/u12:0-3312122 [005] ..s1. 1332684.145222: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+   kworker/u12:0-3312122 [005] ..s1. 1332684.145228: bpf_trace_printk: Elapsed cycles are 48570
+     ksoftirqd/0-16      [000] ..s1. 1332685.048584: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+     ksoftirqd/0-16      [000] ..s1. 1332685.048589: bpf_trace_printk: Elapsed cycles are 45074
+          <idle>-0       [005] ..s2. 1332685.145339: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332685.145345: bpf_trace_printk: Elapsed cycles are 47432
+          <idle>-0       [005] ..s2. 1332686.145460: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332686.145465: bpf_trace_printk: Elapsed cycles are 42646
+          <idle>-0       [005] ..s2. 1332687.145582: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332687.145586: bpf_trace_printk: Elapsed cycles are 40242
+          <idle>-0       [005] ..s2. 1332688.145700: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332688.145702: bpf_trace_printk: Elapsed cycles are 45904
+          <idle>-0       [005] ..s2. 1332689.145813: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332689.145815: bpf_trace_printk: Elapsed cycles are 43388
+          <idle>-0       [005] ..s2. 1332690.145928: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332690.145930: bpf_trace_printk: Elapsed cycles are 43662
+          <idle>-0       [005] ..s2. 1332691.146039: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332691.146042: bpf_trace_printk: Elapsed cycles are 44948
+          <idle>-0       [005] ..s2. 1332692.146156: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332692.146159: bpf_trace_printk: Elapsed cycles are 47902
+          <idle>-0       [005] .Ns2. 1332693.146276: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332693.146279: bpf_trace_printk: Elapsed cycles are 58150
+          <idle>-0       [005] .Ns2. 1332694.146391: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332694.146393: bpf_trace_printk: Elapsed cycles are 51256
+          <idle>-0       [005] .Ns2. 1332695.146507: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332695.146509: bpf_trace_printk: Elapsed cycles are 53372
+          <idle>-0       [005] .Ns2. 1332696.146622: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332696.146624: bpf_trace_printk: Elapsed cycles are 50174
+          <idle>-0       [005] .Ns2. 1332697.146738: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332697.146740: bpf_trace_printk: Elapsed cycles are 51492
+          <idle>-0       [005] .Ns2. 1332698.146853: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332698.146855: bpf_trace_printk: Elapsed cycles are 51014
+          <idle>-0       [005] ..s2. 1332699.146967: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332699.146974: bpf_trace_printk: Elapsed cycles are 51178
+          <idle>-0       [005] .Ns2. 1332700.147087: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332700.147089: bpf_trace_printk: Elapsed cycles are 50896
+          <idle>-0       [005] .Ns2. 1332701.147199: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332701.147201: bpf_trace_printk: Elapsed cycles are 52548
+          <idle>-0       [005] .Ns2. 1332702.147313: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332702.147316: bpf_trace_printk: Elapsed cycles are 50906
+          <idle>-0       [005] .Ns2. 1332703.147425: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332703.147428: bpf_trace_printk: Elapsed cycles are 52718
+          <idle>-0       [005] ..s2. 1332704.147542: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332704.147545: bpf_trace_printk: Elapsed cycles are 47944
+          <idle>-0       [005] ..s2. 1332705.147657: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332705.147659: bpf_trace_printk: Elapsed cycles are 45914
+          <idle>-0       [005] ..s2. 1332706.147773: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332706.147775: bpf_trace_printk: Elapsed cycles are 48282
+          <idle>-0       [005] .Ns2. 1332707.147889: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332707.147891: bpf_trace_printk: Elapsed cycles are 54358
+          <idle>-0       [005] .Ns2. 1332708.148006: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332708.148008: bpf_trace_printk: Elapsed cycles are 52074
+          <idle>-0       [005] .Ns2. 1332709.148119: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332709.148121: bpf_trace_printk: Elapsed cycles are 52994
+    tmux: server-2316999 [005] ..s1. 1332710.148233: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+    tmux: server-2316999 [005] ..s1. 1332710.148238: bpf_trace_printk: Elapsed cycles are 44672
+          <idle>-0       [005] ..s2. 1332711.148352: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332711.148354: bpf_trace_printk: Elapsed cycles are 45424
+          <idle>-0       [005] ..s2. 1332712.148459: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332712.148464: bpf_trace_printk: Elapsed cycles are 39780
+          <idle>-0       [005] ..s2. 1332713.148576: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332713.148579: bpf_trace_printk: Elapsed cycles are 47696
+          <idle>-0       [005] ..s2. 1332714.148691: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332714.148695: bpf_trace_printk: Elapsed cycles are 41098
+          <idle>-0       [005] .Ns2. 1332715.148804: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332715.148806: bpf_trace_printk: Elapsed cycles are 47910
+          <idle>-0       [005] .Ns2. 1332716.148919: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332716.148921: bpf_trace_printk: Elapsed cycles are 54502
+          <idle>-0       [005] ..s2. 1332717.149031: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332717.149037: bpf_trace_printk: Elapsed cycles are 48910
+          <idle>-0       [005] .Ns2. 1332718.149156: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332718.149158: bpf_trace_printk: Elapsed cycles are 48780
+          <idle>-0       [005] .Ns2. 1332719.149270: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332719.149273: bpf_trace_printk: Elapsed cycles are 49956
+          <idle>-0       [005] .Ns2. 1332720.149386: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332720.149388: bpf_trace_printk: Elapsed cycles are 55708
+          <idle>-0       [005] .Ns2. 1332721.149501: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332721.149503: bpf_trace_printk: Elapsed cycles are 54150
+          <idle>-0       [005] .Ns2. 1332722.149618: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332722.149620: bpf_trace_printk: Elapsed cycles are 49316
+          <idle>-0       [005] .Ns2. 1332723.149732: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332723.149734: bpf_trace_printk: Elapsed cycles are 52004
+          <idle>-0       [005] .Ns2. 1332724.149847: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332724.149849: bpf_trace_printk: Elapsed cycles are 53302
+          <idle>-0       [005] .Ns2. 1332725.149967: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332725.149969: bpf_trace_printk: Elapsed cycles are 53566
+          <idle>-0       [005] .Ns2. 1332726.150091: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332726.150093: bpf_trace_printk: Elapsed cycles are 56976
+          <idle>-0       [005] ..s2. 1332727.150196: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332727.150203: bpf_trace_printk: Elapsed cycles are 48276
+          <idle>-0       [005] .Ns2. 1332728.150316: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332728.150319: bpf_trace_printk: Elapsed cycles are 49688
+          <idle>-0       [005] .Ns2. 1332729.150433: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332729.150435: bpf_trace_printk: Elapsed cycles are 52588
+          <idle>-0       [005] ..s2. 1332730.150534: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332730.150542: bpf_trace_printk: Elapsed cycles are 52220
+          <idle>-0       [005] .Ns2. 1332731.150654: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332731.150656: bpf_trace_printk: Elapsed cycles are 48632
+          <idle>-0       [005] .Ns2. 1332732.150771: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332732.150773: bpf_trace_printk: Elapsed cycles are 49196
+            htop-2642614 [005] ..s1. 1332733.150885: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+            htop-2642614 [005] ..s1. 1332733.150890: bpf_trace_printk: Elapsed cycles are 44272
+          <idle>-0       [005] ..s2. 1332734.150999: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332734.151001: bpf_trace_printk: Elapsed cycles are 45482
+          <idle>-0       [005] ..s2. 1332735.151111: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332735.151115: bpf_trace_printk: Elapsed cycles are 38732
+          <idle>-0       [005] ..s2. 1332736.151223: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332736.151227: bpf_trace_printk: Elapsed cycles are 40844
+          <idle>-0       [005] .Ns2. 1332737.151338: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] .Ns2. 1332737.151342: bpf_trace_printk: Elapsed cycles are 37768
+          <idle>-0       [005] ..s2. 1332738.151451: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332738.151453: bpf_trace_printk: Elapsed cycles are 43436
+          <idle>-0       [005] ..s2. 1332739.151565: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332739.151569: bpf_trace_printk: Elapsed cycles are 41044
+          <idle>-0       [005] ..s2. 1332740.151677: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332740.151682: bpf_trace_printk: Elapsed cycles are 40954
+          <idle>-0       [005] ..s2. 1332741.151797: bpf_trace_printk: port: 11211, total_metrics_size is -2 
+
+          <idle>-0       [005] ..s2. 1332741.151799: bpf_trace_printk: Elapsed cycles are 46564

@@ -1,0 +1,56 @@
+Linux 6.8.12+ (sendai) 	11/07/2025 	_x86_64_	(6 CPU)
+
+12:54:21 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:54:22 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     2  systemd-journal
+12:54:22 AM  1000   2946833    8.00    0.00    0.00    0.00    8.00     4  ssh
+12:54:22 AM  1000   2946834    0.00    0.00    0.00    0.00    0.00     1  sh
+
+12:54:22 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:54:23 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     2  systemd-journal
+12:54:23 AM  1000   2946833    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:54:23 AM  1000   2946834    0.00    0.00    0.00    0.00    0.00     1  sh
+
+12:54:23 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:54:24 AM     0   1946633    0.00    1.00    0.00    0.00    1.00     1  systemd-journal
+12:54:24 AM  1000   2946833    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:54:24 AM  1000   2946834    0.00    0.00    0.00    0.00    0.00     1  sh
+
+12:54:24 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:54:25 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     2  systemd-journal
+12:54:25 AM  1000   2946833    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:54:25 AM  1000   2946834    0.00    0.00    0.00    0.00    0.00     1  sh
+
+12:54:25 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:54:26 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     2  systemd-journal
+12:54:26 AM  1000   2946833    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:54:26 AM  1000   2946834    0.00    0.00    0.00    0.00    0.00     1  sh
+
+12:54:26 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:54:27 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     2  systemd-journal
+12:54:27 AM  1000   2946833    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:54:27 AM  1000   2946834    0.00    0.00    0.00    0.00    0.00     1  sh
+
+12:54:27 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:54:28 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     5  systemd-journal
+12:54:28 AM  1000   2946833    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:54:28 AM  1000   2946834    0.00    0.00    0.00    0.00    0.00     1  sh
+
+12:54:28 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:54:29 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     5  systemd-journal
+12:54:29 AM  1000   2946833    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:54:29 AM  1000   2946834    0.00    0.00    0.00    0.00    0.00     1  sh
+
+12:54:29 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:54:30 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     5  systemd-journal
+12:54:30 AM  1000   2946833    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:54:30 AM  1000   2946834    0.00    0.00    0.00    0.00    0.00     1  sh
+
+12:54:30 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:54:31 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     5  systemd-journal
+12:54:31 AM  1000   2946833    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:54:31 AM  1000   2946834    0.00    0.00    0.00    0.00    0.00     1  sh
+
+Average:      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+Average:        0   1946633    0.00    0.10    0.00    0.00    0.10     -  systemd-journal
+Average:     1000   2946833    0.80    0.00    0.00    0.00    0.80     -  ssh
+Average:     1000   2946834    0.00    0.00    0.00    0.00    0.00     -  sh

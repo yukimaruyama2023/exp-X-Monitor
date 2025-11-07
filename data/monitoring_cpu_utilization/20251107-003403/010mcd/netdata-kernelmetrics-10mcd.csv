@@ -1,0 +1,11 @@
+Linux 6.8.12+ (sendai) 	11/07/2025 	_x86_64_	(6 CPU)
+
+12:37:59 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:38:39 AM     0   1946633    0.05    0.03    0.00    0.00    0.07     4  systemd-journal
+12:38:39 AM   111   2928340    4.23    1.75    0.00    0.47    5.97     0  netdata
+12:38:39 AM  1000   2928341    0.22    0.00    0.00    0.00    0.22     1  ssh
+
+Average:      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+Average:        0   1946633    0.05    0.03    0.00    0.00    0.07     -  systemd-journal
+Average:      111   2928340    4.23    1.75    0.00    0.47    5.97     -  netdata
+Average:     1000   2928341    0.22    0.00    0.00    0.00    0.22     -  ssh
