@@ -26,6 +26,8 @@ static __always_inline void swap_src_dst_udp(struct udphdr *udp) {
 
 SEC("xdp.frags")
 int xdp_udp_echo(struct xdp_md *ctx) {
+    __u64 start, end, elapsed_cycles;
+    bpf_rdtsc((long *)&start);
     void *data     = (void *)(unsigned long)ctx->data;
     void *data_end = (void *)(unsigned long)ctx->data_end;
 
@@ -74,6 +76,10 @@ int xdp_udp_echo(struct xdp_md *ctx) {
     bpf_get_all_cpu_metrics(all_cpu_metrics);
     bpf_xdp_store_bytes(ctx, payload_offset, all_cpu_metrics, sizeof(long) * 10);
     payload_offset += sizeof(long) * 10;
+
+    bpf_rdtsc((long *)&end);
+    elapsed_cycles = end - start;
+    bpf_printk("Elapsed cycles are %ld", elapsed_cycles);
 
     return XDP_TX;
 }
