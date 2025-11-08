@@ -1,0 +1,67 @@
+Linux 6.8.12+ (sendai) 	11/09/2025 	_x86_64_	(6 CPU)
+
+12:07:31 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:07:32 AM   111    247517    9.00    1.00    0.00    0.00   10.00     0  netdata
+12:07:32 AM  1000    247867    3.00    0.00    0.00    0.00    3.00     4  ssh
+12:07:32 AM  1000    247868    0.00    0.00    0.00    0.00    0.00     5  sh
+12:07:32 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     2  systemd-journal
+
+12:07:32 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:07:33 AM   111    247517    6.00    3.00    0.00    0.00    9.00     0  netdata
+12:07:33 AM  1000    247867    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:07:33 AM  1000    247868    0.00    0.00    0.00    0.00    0.00     5  sh
+12:07:33 AM     0   1946633    0.00    1.00    0.00    0.00    1.00     4  systemd-journal
+
+12:07:33 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:07:34 AM   111    247517    2.00    1.00    0.00    0.00    3.00     0  netdata
+12:07:34 AM  1000    247867    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:07:34 AM  1000    247868    0.00    0.00    0.00    0.00    0.00     5  sh
+12:07:34 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     3  systemd-journal
+
+12:07:34 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:07:35 AM   111    247517    1.00    0.00    0.00    0.00    1.00     0  netdata
+12:07:35 AM  1000    247867    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:07:35 AM  1000    247868    0.00    0.00    0.00    0.00    0.00     5  sh
+12:07:35 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     3  systemd-journal
+
+12:07:35 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:07:36 AM   111    247517    0.00    1.00    0.00    0.00    1.00     0  netdata
+12:07:36 AM  1000    247867    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:07:36 AM  1000    247868    0.00    0.00    0.00    0.00    0.00     5  sh
+12:07:36 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     3  systemd-journal
+
+12:07:36 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:07:37 AM   111    247517    1.00    1.00    0.00    0.00    2.00     0  netdata
+12:07:37 AM  1000    247867    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:07:37 AM  1000    247868    0.00    0.00    0.00    0.00    0.00     5  sh
+12:07:37 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     3  systemd-journal
+
+12:07:37 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:07:38 AM   111    247517    1.00    0.00    0.00    0.00    1.00     0  netdata
+12:07:38 AM  1000    247867    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:07:38 AM  1000    247868    0.00    0.00    0.00    0.00    0.00     5  sh
+12:07:38 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     3  systemd-journal
+
+12:07:38 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:07:39 AM   111    247517    0.00    1.00    0.00    0.00    1.00     0  netdata
+12:07:39 AM  1000    247867    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:07:39 AM  1000    247868    0.00    0.00    0.00    0.00    0.00     5  sh
+12:07:39 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     3  systemd-journal
+
+12:07:39 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:07:40 AM   111    247517    2.00    2.00    0.00    0.00    4.00     0  netdata
+12:07:40 AM  1000    247867    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:07:40 AM  1000    247868    0.00    0.00    0.00    0.00    0.00     5  sh
+12:07:40 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     3  systemd-journal
+
+12:07:40 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+12:07:41 AM   111    247517    7.00    5.00    0.00    0.00   12.00     0  netdata
+12:07:41 AM  1000    247867    0.00    0.00    0.00    0.00    0.00     4  ssh
+12:07:41 AM  1000    247868    0.00    0.00    0.00    0.00    0.00     5  sh
+12:07:41 AM     0   1946633    0.00    0.00    0.00    0.00    0.00     3  systemd-journal
+
+Average:      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+Average:      111    247517    2.90    1.50    0.00    0.00    4.40     -  netdata
+Average:     1000    247867    0.30    0.00    0.00    0.00    0.30     -  ssh
+Average:     1000    247868    0.00    0.00    0.00    0.00    0.00     -  sh
+Average:        0   1946633    0.00    0.10    0.00    0.00    0.10     -  systemd-journal
