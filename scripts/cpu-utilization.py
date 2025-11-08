@@ -95,24 +95,6 @@ def detach_xdp():
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
     time.sleep(5)
 
-# def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
-#     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-#     if x_monitor_interval == 1:
-#         stdin_input = "1\n"
-#     elif x_monitor_interval == 0.1:
-#         stdin_input = "0.1\n"
-#     else:
-#         stdin_input = "0.01\n"
-#     cmd = (
-#         f"cd {remote_monitoring_client} &&"
-#         f"./client_x-monitor test.csv"
-#     )
-#     subprocess.run(f"ssh {remote_host} {cmd}".split(),
-#                    input=stdin_input,
-#                    text=True
-#     )
-#     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
-
 def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
     stdin_input = "1\n" if x_monitor_interval == 1 else ("0.1\n" if x_monitor_interval == 0.1 else "0.01\n")
@@ -128,27 +110,6 @@ def calculate_netdata_cpu(num_memcached, metric):
         subprocess.run(cmd, shell=True, stdout=f, stderr=subprocess.STDOUT, check=True)
 
     print(f"=== [End] Saved to {out_path} ===")
-
-# def calculate_x_monitor_cpu(num_memcached, metric):
-#     print(f"=== [Start] Calculate X-Monitor CPU Utilization, {num_memcached} instance, {metric} metrics === ")
-#     subprocess.run(f"sudo cat /sys/kernel/debug/tracing/trace_pipe > {data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd.csv".split())
-#     print(f"=== [End] Calculate X-Monitor CPU Utilization, {num_memcached} instance, {metric} metrics === ")
-
-# def calculate_x_monitor_cpu(num_memcached, metric, x_monitor_interval):
-#     print(f"=== [Start] Calculate X-Monitor CPU Utilization, {num_memcached} instance, {metric} metrics === ")
-#     out_path = f"{data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
-#     # 出力先を開いて trace_pipe をバックグラウンドで読ませる
-#     # /sys/kernel/debug/tracing/trace_pipe が無ければ /sys/kernel/tracing/trace_pipe を試す
-#     trace_pipe = "/sys/kernel/debug/tracing/trace_pipe"
-#     if not os.path.exists(trace_pipe):
-#         alt = "/sys/kernel/tracing/trace_pipe"
-#         if os.path.exists(alt):
-#             trace_pipe = alt
-#     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-#     f = open(out_path, "w")
-#     # cat をバックグラウンドで起動（stop_bpf_tracepipe の pkill が止める）
-#     subprocess.Popen(["sudo", "cat", trace_pipe], stdout=f)
-#     print(f"=== [Trace reader started in background -> {out_path}] ===")
 
 def calculate_x_monitor_cpu(num_memcached, metric, x_monitor_interval):
     print(f"=== [Start] Calculate X-Monitor CPU Utilization, {num_memcached} instance, {metric} metrics === ")
@@ -175,7 +136,6 @@ def stop_monitoring_client_for_netdata():
 
 def stop_bpf_tracepipe():
     subprocess.run("sudo pkill -f trace_pipe".split())
-    # ここで確実に flush/close
     for proc, f, path in TRACE_READERS:
         try:
             proc.wait(timeout=2)
