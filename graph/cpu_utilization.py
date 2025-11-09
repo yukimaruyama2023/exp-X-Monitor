@@ -4,27 +4,31 @@ from typing import Dict, List, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+HATCH_LINEWIDTH = 1.6  
 fontsize = 25
 labelsize = 25
 # --- 追加：グローバルで統一色を定義 ---
-PALETTE = {
-    "blue":      "#0072B2",
-    "sky":       "#56B4E9",
-    "green":     "#009E73",
-    "orange":    "#E69F00",
-    "vermillion":"#D55E00",
-}
 
+# 統一パレット（任意）
 COLORS = {
-    "Netdata":            PALETTE["blue"],      # daemon
-    "go.d.plugin":        PALETTE["sky"],
-    "X-Monitor-1s":       PALETTE["green"],
-    "X-Monitor-100ms":    PALETTE["orange"],
-    "X-Monitor-10ms":     PALETTE["vermillion"],
+    "Netdata":             "#F5A97F",   # Peach
+    # "go.d.plugin":         "#EBA0AC", 
+    "go.d.plugin":         "#E28C8C", 
+    "X-Monitor (1000ms)":  "#5AB8A8",   # Teal
+    "X-Monitor (100ms)":   "#72A7E3",   # Blue
+    "X-Monitor (10ms)":    "#C7A0E8",   # Lavender
 }
 
-EDGE_KW = dict(edgecolor="black", linewidth=0.6)  # モノクロ印刷の視認性
-HATCH_PLUGIN = "//"  # go.d.plugin のみハッチ
+HATCHES = {
+    "Netdata":        "////",
+    "go.d.plugin":    "***",
+    "X-Monitor (1000ms)":  "\\\\\\\\",
+    "X-Monitor (100ms)":   "xxxxx",
+    "X-Monitor (10ms)":    "....",
+}
+
+# 縁取り（CPU 図の棒で使用）
+EDGE_KW = dict(edgecolor="black", linewidth=0.6)
 
 # ---- 正規表現 ----
 CYCLES_RE = re.compile(r"Elapsed cycles are (\d+)")
@@ -125,64 +129,152 @@ def _collect_netdata_files(base_dir: Path, metric: str) -> Dict[int, Path]:
             result[mcd_num] = p
     return result
 
-# ---- グラフ描画 ----
+# def draw_bar(ax, xpos, height, label, width):
+#     """
+#     白塗り + 色ハッチ + 黒枠線 の 2レイヤ描画
+#     """
+#     # 下レイヤ：色つきハッチ + 色枠
+#     ax.bar(
+#         xpos, height,
+#         width=width,
+#         facecolor="white",
+#         edgecolor=COLORS[label],
+#         hatch=HATCHES[label],
+#         linewidth=1.1,
+#         zorder=2,
+#     )
+#     # 上レイヤ：透明 + 黒枠
+#     ax.bar(
+#         xpos, height,
+#         width=width,
+#         facecolor=(0,0,0,0),
+#         edgecolor="black",
+#         linewidth=1.3,
+#         zorder=3,
+#     )
 
+def draw_bar(ax, xpos, height, label, width, bottom=None):
+    # 下レイヤ：色ハッチ + 色枠
+    ax.bar(
+        xpos, height,
+        width=width,
+        bottom=bottom,
+        facecolor="white",
+        edgecolor=COLORS[label],
+        hatch=HATCHES[label],
+        linewidth=1.1,
+        zorder=2,
+    )
+    # 上レイヤ：透明 + 黒枠
+    ax.bar(
+        xpos, height,
+        width=width,
+        bottom=bottom,
+        facecolor=(0,0,0,0),
+        edgecolor="black",
+        linewidth=1.3,
+        zorder=3,
+    )
+
+# ---- グラフ描画 ----
+    
 def _plot_grouped(ax, util_xmon: Dict[int, Dict[str, float]],
                   util_netdata: Dict[int, Tuple[float, float]],
                   metric: str):
 
-    groups = sorted(set(util_xmon.keys()) | set(util_netdata.keys()))  # [1,5,10]
-    x = np.arange(len(groups))
-    width = 0.18
-    offsets = np.linspace(-1.5*width, 1.5*width, 4)
+    # --- ここを追加：ハッチ線の太さを一時的に 1.6 に ---
+    old_hlw = plt.rcParams.get("hatch.linewidth", 1.0)
+    plt.rcParams["hatch.linewidth"] = HATCH_LINEWIDTH
+    try:
+        groups = sorted(set(util_xmon.keys()) | set(util_netdata.keys()))  # [1,5,10]
+        x = np.arange(len(groups))
+        width = 0.18
+        offsets = np.linspace(-1.5*width, 1.5*width, 4)
 
-    # % へ変換
-    xmon_pct = {s: [util_xmon.get(g, {}).get(s, float('nan')) * 100 for g in groups] for s in ["1", "0.1", "0.01"]}
-    netdata_daemon = [util_netdata.get(g, (np.nan, np.nan))[0] for g in groups]
-    netdata_god    = [util_netdata.get(g, (np.nan, np.nan))[1] for g in groups]
+        # % へ変換
+        xmon_pct = {s: [util_xmon.get(g, {}).get(s, float('nan')) * 100 for g in groups] for s in ["1", "0.1", "0.01"]}
+        netdata_daemon = [util_netdata.get(g, (np.nan, np.nan))[0] for g in groups]
+        netdata_god    = [util_netdata.get(g, (np.nan, np.nan))[1] for g in groups]
 
-    # --- Netdata（stacked）---
-    if metric == "user":
-        ax.bar(x + offsets[0], netdata_god, width=width,
-               label="go.d.plugin", color=COLORS["go.d.plugin"], hatch=HATCH_PLUGIN, **EDGE_KW)
-        ax.bar(x + offsets[0], netdata_daemon, width=width, bottom=netdata_god,
-               label="Netdata", color=COLORS["Netdata"], **EDGE_KW)
-    else:
-        ax.bar(x + offsets[0], netdata_daemon, width=width,
-               label="Netdata", color=COLORS["Netdata"], **EDGE_KW)
+        # --- Netdata（stacked）---
+        # if metric == "user":
+        #     # go.d.plugin
+        #     draw_bar(ax, x + offsets[0], netdata_god, "go.d.plugin", width)
+        #     # Netdata daemon (上に積む)
+        #     draw_bar(ax, x + offsets[0], netdata_daemon, "Netdata", width)
+        # else:
+        #     draw_bar(ax, x + offsets[0], netdata_daemon, "Netdata", width)
+        if metric == "user":
+            # go.d.plugin（下段）
+            draw_bar(ax, x + offsets[0], netdata_god, "go.d.plugin", width, bottom=None)
+            # Netdata（上段, bottom=go.d）
+            draw_bar(ax, x + offsets[0], netdata_daemon, "Netdata", width, bottom=np.array(netdata_god))
+        else:
+            draw_bar(ax, x + offsets[0], netdata_daemon, "Netdata", width)
 
-    # --- X-Monitor ---
-    ax.bar(x + offsets[1], xmon_pct["1"],   width=width,
-           label="X-Monitor (1000ms)",    color=COLORS["X-Monitor-1s"], **EDGE_KW)
-    ax.bar(x + offsets[2], xmon_pct["0.1"], width=width,
-           label="X-Monitor (100ms)", color=COLORS["X-Monitor-100ms"], **EDGE_KW)
-    ax.bar(x + offsets[3], xmon_pct["0.01"], width=width,
-           label="X-Monitor (10ms)",  color=COLORS["X-Monitor-10ms"], **EDGE_KW) 
+        # --- X-Monitor ---
+        draw_bar(ax, x + offsets[1], xmon_pct["1"],    "X-Monitor (1000ms)", width)
+        draw_bar(ax, x + offsets[2], xmon_pct["0.1"],  "X-Monitor (100ms)", width)
+        draw_bar(ax, x + offsets[3], xmon_pct["0.01"], "X-Monitor (10ms)", width)
 
-    # 体裁
-    ax.set_xticks(x)
-    ax.set_xticklabels([str(g) for g in groups], fontsize=fontsize)
-    ax.set_xlabel("Number of instances", fontsize=fontsize)
-    ax.set_ylabel("CPU Utilization (%)", fontsize=fontsize)
-    ax.tick_params(axis='x', labelsize=labelsize)
-    ax.tick_params(axis='y', labelsize=labelsize)
 
-    ax.set_yscale("log")
-    ax.set_ylim(bottom=1e-4)
+        # 体裁
+        ax.set_xticks(x)
+        ax.set_xticklabels([str(g) for g in groups], fontsize=fontsize)
+        ax.set_xlabel("Number of instances", fontsize=fontsize)
+        ax.set_ylabel("CPU Utilization (%)", fontsize=fontsize)
+        ax.tick_params(axis='x', labelsize=labelsize)
+        ax.tick_params(axis='y', labelsize=labelsize)
 
-    fig = ax.figure
-    fig.text(0.055, 0.80, "log scale", fontsize=18, ha='left', va='bottom')
+        ax.set_yscale("log")
+        ax.set_ylim(bottom=1e-4)
 
-    #### レジェンド順を固定（Netdata, 1s, 100ms, 10ms） ###
-    handles, labels = ax.get_legend_handles_labels()
-    order = ["Netdata", "go.d.plugin", "X-Monitor (1000ms)", "X-Monitor (100ms)", "X-Monitor (10ms)"]
-    order = [o for o in order if o in labels]  # kernel のとき go.d.plugin は無い
-    by_label = {lab: h for h, lab in zip(handles, labels)}
-    ax.legend([by_label[o] for o in order], order,
-              loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.25), fontsize=14)
-    ax.grid(axis="y", linestyle="--", linewidth=0.5, alpha=0.6)
-    
+        fig = ax.figure
+        fig.text(0.055, 0.80, "log scale", fontsize=18, ha='left', va='bottom')
 
+        #### レジェンド順を固定（Netdata, 1s, 100ms, 10ms） ###
+        handles, labels = ax.get_legend_handles_labels()
+        order = ["Netdata", "go.d.plugin", "X-Monitor (1000ms)", "X-Monitor (100ms)", "X-Monitor (10ms)"]
+        order = [o for o in order if o in labels]  # kernel のとき go.d.plugin は無い
+        by_label = {lab: h for h, lab in zip(handles, labels)}
+        # ax.legend([by_label[o] for o in order], order,
+        #           loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.25), fontsize=14)
+        # ax.grid(axis="y", linestyle="--", linewidth=0.5, alpha=0.6)
+
+        from matplotlib.patches import Patch
+
+        # ---- Legend（色付きハッチ + 黒枠）----
+        order = ["Netdata", "go.d.plugin", "X-Monitor (1000ms)", "X-Monitor (100ms)", "X-Monitor (10ms)"]
+        if metric == "kernel":
+            order.remove("go.d.plugin")  # kernel では go.d.plugin を出さない
+
+        # 実在キーだけ残す（typoや欠損対策）
+        order = [lab for lab in order if (lab in COLORS and lab in HATCHES)]
+
+        legend_items = [
+            Patch(
+                facecolor="white",           # 塗りは白
+                edgecolor=COLORS[lab],       # ハッチ色と同系で縁取り
+                hatch=HATCHES[lab],          # 模様
+                linewidth=1.6,
+                label=lab
+            )
+            for lab in order
+        ]
+
+        ax.legend(
+            handles=legend_items,
+            loc="upper center",
+            ncol=3,
+            bbox_to_anchor=(0.5, 1.25),
+            fontsize=14,
+            frameon=True,
+            framealpha=1.0,
+            # edgecolor="black",
+        )
+    finally:
+            # --- 忘れずに元へ戻す（他の図へ副作用を残さない）---
+            plt.rcParams["hatch.linewidth"] = old_hlw
 
 
 # ---- メイン ----

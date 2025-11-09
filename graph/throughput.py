@@ -7,6 +7,7 @@ from packaging import version
 
 
 fontsize = 25
+legend_fontsize = 17
 
 THROUGHPUT_RE = re.compile(r"Total QPS\s*=\s*([\d.]+)")
 
@@ -29,15 +30,6 @@ FILE_PATTERNS = {
 
 ################# Design Configuration ############
 
-## Catppuccin ###
-# COLORS = {
-#     "No Monitoring":      "#6E738D",  # Subtle gray (text/overlay)
-#     "Netdata (1000ms)":   "#F5A97F",  # Peach
-#     "X-Monitor (1000ms)": "#8BD5CA",  # Teal
-#     "X-Monitor (100ms)":  "#91D7E3",  # Sapphire-cyan
-#     "X-Monitor (10ms)":   "#B7BDF8",  # Mauve
-# }
-
 COLORS = {
     "No Monitoring":      "#6E738D",  # Neutral gray (base)
     "Netdata (1000ms)":   "#F5A97F",  # Peach (warm)
@@ -46,17 +38,8 @@ COLORS = {
     "X-Monitor (10ms)":   "#C7A0E8",  # Lavender-purple（明確に他と離す）
 }
 
-
-# HATCHES = {
-#     "No Monitoring": "",
-#     "Netdata (1000ms)": "//",
-#     "X-Monitor (1000ms)": "\\\\",
-#     "X-Monitor (100ms)": "xx",
-#     "X-Monitor (10ms)": "..",
-# }
-
 HATCHES = {
-    "No Monitoring":      "*****",          # 無地
+    "No Monitoring":      "***",          # 無地
     "Netdata (1000ms)":   "////",      # 密な斜線
     "X-Monitor (1000ms)": "\\\\\\\\",  # 密な逆斜線
     "X-Monitor (100ms)":  "xxxxx",    # 密なクロス
@@ -117,62 +100,6 @@ def collect_stats_across_runs(base_dir, metric, nums, run_ids=None):
                 stds[label].append(float(np.std(vals, ddof=1)))  # 不偏標準偏差
     return means, stds
 
-# def _plot_one_metric(means, stds, nums, save_path):
-#     x = np.arange(len(nums))
-#     width = 0.13
-#     offsets = np.linspace(-width*2, width*2, len(LABELS))
-
-#     plt.figure(figsize=(10, 7))
-
-#     # for i, label in enumerate(LABELS):
-#     #     plt.bar(
-#     #         x + offsets[i],
-#     #         means[label],
-#     #         yerr=stds[label],
-#     #         width=width,
-#     #         color=COLORS[label],
-#     #         hatch=HATCHES[label],
-#     #         label=label,
-#     #         capsize=4,
-#     #         ecolor="black",
-#     #         error_kw={"elinewidth": 1},
-#     #         **EDGE_KW
-#     #     )
-
-#     # for i, label in enumerate(LABELS):
-#     #     plt.bar(
-#     #         x + offsets[i],
-#     #         means[label],
-#     #         yerr=stds[label],
-#     #         width=width,
-#     #         facecolor="white",           # ← 塗りつぶし白
-#     #         edgecolor="black",           # ← 黒で輪郭をはっきり
-#     #         hatch=HATCHES[label],        # ← 改良した密ハッチ
-#     #         label=label,
-#     #         capsize=4,
-#     #         ecolor="black",
-#     #         error_kw={"elinewidth": 1.2},
-#     #         linewidth=1.3,               # ← 線を太めに
-#     #     )
-
-#     # ▼ x軸：数値だけにする（1, 5, 10）
-#     plt.xticks(x, [str(n) for n in nums], fontsize=fontsize)
-
-#     # ▼ x軸ラベルを追加
-#     plt.xlabel("Number of instances", fontsize=fontsize)
-
-#     plt.tick_params(axis='y', labelsize=fontsize)
-#     plt.ylabel("Throughput (K ops/sec)", fontsize=fontsize)
-#     plt.ylim(0, 1050)
-#     plt.grid(axis="y", linestyle="--", alpha=0.4)
-#     plt.legend(fontsize=15.5)
-
-#     # タイトル行やラベルが切れないように
-#     plt.tight_layout()
-
-#     plt.savefig(save_path, dpi=200, bbox_inches="tight")
-#     print(f"Saved: {save_path}")
-#     plt.show()
 
 def _plot_one_metric(means, stds, nums, save_path):
     import matplotlib.pyplot as plt
@@ -226,33 +153,104 @@ def _plot_one_metric(means, stds, nums, save_path):
     plt.ylim(0, 1050)
     plt.grid(axis="y", linestyle="--", alpha=0.4)
 
-    # 凡例：ハッチを表示したいので handlelength を少し増やす
-    from matplotlib.patches import Patch
-    import matplotlib.patheffects as pe
+    #### 凡例：グラフ内に入れるパターン
+    # from matplotlib.patches import Patch
+    # import matplotlib.patheffects as pe
+    # legend_handles = []
+    # for label in LABELS:
+    #     patch = Patch(
+    #         facecolor="white",
+    #         edgecolor=COLORS[label],     # ← ハッチ線色（色）
+    #         hatch=HATCHES[label],        # ← 密ハッチそのまま
+    #         linewidth=1.2,
+    #     )
+    #     patch.set_path_effects([
+    #         pe.Stroke(linewidth=1.4, foreground="black"),
+    #         pe.Normal()
+    #     ])
+    #     legend_handles.append(patch)
+    # plt.legend(
+    #     handles=legend_handles,
+    #     labels=LABELS,
+    #     fontsize=15.5,
+    #     handlelength=2.0,
+    # )
 
+    ### 凡例：グラフ外に出すパターン
+    import matplotlib.patches as mpatches
+    import matplotlib.patheffects as pe
     legend_handles = []
     for label in LABELS:
-        # 色つきハッチ (凡例表示用)
-        patch = Patch(
+        p = mpatches.Patch(
             facecolor="white",
-            edgecolor=COLORS[label],     # ← ハッチ線色（色）
-            hatch=HATCHES[label],        # ← 密ハッチそのまま
+            edgecolor=COLORS[label],   # ハッチと一致する色
+            hatch=HATCHES[label],
             linewidth=1.2,
         )
-        # 黒枠を上書きして見た目を揃える
-        patch.set_path_effects([
-            pe.Stroke(linewidth=1.4, foreground="black"),
-            pe.Normal()
-        ])
-        legend_handles.append(patch)
+        p.set_path_effects([pe.Stroke(linewidth=1.4, foreground="black"), pe.Normal()])
+        legend_handles.append(p)
 
     plt.legend(
-        handles=legend_handles,
-        labels=LABELS,
-        fontsize=15.5,
-        handlelength=2.0,
+        legend_handles,
+        LABELS,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.23),   # ← グラフの上に配置
+        ncol=3,                       # 3列に並べる（2なら2列、5なら1行）
+        fontsize=legend_fontsize,
+        frameon=True                 # 枠線なしで上品に
+        # edgecolor="black"
     )
 
+# def _plot_one_metric(means, stds, nums, save_path):
+#     import matplotlib.pyplot as plt
+
+#     x = np.arange(len(nums))
+#     width = 0.13
+#     offsets = np.linspace(-width*2, width*2, len(LABELS))
+
+#     plt.figure(figsize=(10, 7))
+
+#     # ハッチ線を少し太めに（必要に応じて 1.4〜1.8）
+#     old_hlw = plt.rcParams.get("hatch.linewidth", 1.0)
+#     plt.rcParams["hatch.linewidth"] = 
+
+
+#     for i, label in enumerate(LABELS):
+#         plt.bar(
+#             x + offsets[i], means[label],
+#             yerr=stds[label], width=width,
+#             facecolor="white",            # 塗りは白
+#             edgecolor="black",            # 枠は黒
+#             hatch=HATCHES[label],         # 密ハッチ
+#             hatch_color=COLORS[label],    # ← 各系列の色をここで指定（3.7+）
+#             linewidth=1.3,
+#             capsize=4, ecolor="black",
+#             error_kw={"elinewidth": 1.2},
+#         )
+
+#     # 軸など
+#     plt.rcParams["hatch.linewidth"] = old_hlw
+#     plt.xticks(x, [str(n) for n in nums], fontsize=fontsize)
+#     plt.xlabel("Number of instances", fontsize=fontsize)
+#     plt.tick_params(axis='y', labelsize=fontsize)
+#     plt.ylabel("Throughput (K ops/sec)", fontsize=fontsize)
+#     plt.ylim(0, 1050)
+#     plt.grid(axis="y", linestyle="--", alpha=0.4)
+
+#     # 凡例（1レイヤ用：hatch_color をそのまま使う）
+#     from matplotlib.patches import Patch
+#     legend_handles = [
+#         Patch(facecolor="white", edgecolor="black",
+#               hatch=HATCHES[label], hatch_color=COLORS[label],
+#               linewidth=1.3, label=label)
+#         for label in LABELS
+#     ]
+#     plt.legend(handles=legend_handles, fontsize=15.5, handlelength=2.0)
+
+#     plt.tight_layout()
+#     plt.savefig(save_path, dpi=300, bbox_inches="tight")
+#     print(f"Saved: {save_path}")
+#     plt.show()
 
     
 def plot_grouped_both(base_dir, nums=[1,5,10], run_ids=None):
