@@ -16,7 +16,8 @@ conf_root = "./conf"
 
 num_memcacheds = [1, 5, 10]
 x_monitor_intervals = [1, 0.1, 0.01]
-metrics = ["user", "kernel"]
+# metrics = ["user", "kernel"]
+metrics = ["kernel", "user"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 TRACE_READERS = []
 
@@ -105,13 +106,22 @@ def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
 def calculate_netdata_cpu(num_memcached, metric):
     print(f"=== [Start] Calculate Netdata CPU Utilization, {num_memcached} instance, {metric} metrics === ")
     out_path = f"{data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
-    cmd = f"pidstat -u -p $(pgrep -d',' -f netdata) 1 10"
+    # cmd = f"pidstat -u -p $(pgrep -d',' -f netdata) 1 10"
+    cmd = f"pidstat -u -p $(pgrep -d',' -f netdata) 40 1"
     with open(out_path, "w") as f:
         subprocess.run(cmd, shell=True, stdout=f, stderr=subprocess.STDOUT, check=True)
-
     print(f"=== [End] Saved to {out_path} ===")
 
+def clear_trace_buffer():
+    base = "/sys/kernel/debug/tracing"
+    if not os.path.isdir(base):
+        base = "/sys/kernel/tracing"
+    subprocess.run(["sudo", "sh", "-c", f"echo 0 > {base}/tracing_on"])
+    subprocess.run(["sudo", "sh", "-c", f": > {base}/trace"])
+    subprocess.run(["sudo", "sh", "-c", f"echo 1 > {base}/tracing_on"])
+
 def calculate_x_monitor_cpu(num_memcached, metric, x_monitor_interval):
+    clear_trace_buffer()
     print(f"=== [Start] Calculate X-Monitor CPU Utilization, {num_memcached} instance, {metric} metrics === ")
     out_path = f"{data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
 
@@ -126,13 +136,11 @@ def calculate_x_monitor_cpu(num_memcached, metric, x_monitor_interval):
     # ▼ proc を受け取って登録
     proc = subprocess.Popen(["sudo", "cat", trace_pipe], stdout=f)
     TRACE_READERS.append((proc, f, out_path))
+    time.sleep(5)
     print(f"=== [Trace reader started in background -> {out_path}] ===")
 
 def stop_monitoring_client_for_netdata():
     subprocess.run(["ssh", remote_host, "pkill", "-f", "client_netdata"])
-
-# def stop_bpf_tracepipe():
-#     subprocess.run("sudo pkill -f trace_pipe".split())
 
 def stop_bpf_tracepipe():
     subprocess.run("sudo pkill -f trace_pipe".split())
