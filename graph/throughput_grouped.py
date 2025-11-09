@@ -6,19 +6,19 @@ import matplotlib.pyplot as plt
 THROUGHPUT_RE = re.compile(r"Total QPS\s*=\s*([\d.]+)")
 
 LABELS = [
-    "No-Monitoring",
-    "Netdata-1000ms",
-    "X-Monitor-1000ms",
-    "X-Monitor-100ms",
-    "X-Monitor-10ms",
+    "No Monitoring",
+    "Netdata (1000ms)",
+    "X-Monitor (1000ms)",
+    "X-Monitor (100ms)",
+    "X-Monitor (10ms)",
 ]
 
 FILE_PATTERNS = {
-    "No-Monitoring":        "no_monitoring-{num}mcd.txt",
-    "Netdata-1000ms":       "netdata-{metric}metrics-{num}mcd.txt",
-    "X-Monitor-1000ms":     "xmonitor-{metric}metrics-{num}mcd-interval1.txt",
-    "X-Monitor-100ms":      "xmonitor-{metric}metrics-{num}mcd-interval0.1.txt",
-    "X-Monitor-10ms":       "xmonitor-{metric}metrics-{num}mcd-interval0.01.txt",
+    "No Monitoring":        "no_monitoring-{num}mcd.txt",
+    "Netdata (1000ms)":       "netdata-{metric}metrics-{num}mcd.txt",
+    "X-Monitor (1000ms)":     "xmonitor-{metric}metrics-{num}mcd-interval1.txt",
+    "X-Monitor (100ms)":      "xmonitor-{metric}metrics-{num}mcd-interval0.1.txt",
+    "X-Monitor (10ms)":       "xmonitor-{metric}metrics-{num}mcd-interval0.01.txt",
 }
 
 
@@ -51,11 +51,11 @@ def plot_grouped(base_dir, metric, nums=[1,5,10]):
     means = collect_means(base_dir, metric, nums)
 
     colors = {
-        "No-Monitoring": "#999999",
-        "Netdata-1000ms": "coral",
-        "X-Monitor-1000ms": "#1f77b4",
-        "X-Monitor-100ms": "#4aa3df",
-        "X-Monitor-10ms": "#88c5f2",
+        "No Monitoring": "#999999",
+        "Netdata (1000ms)": "coral",
+        "X-Monitor (1000ms)": "#1f77b4",
+        "X-Monitor (100ms)": "#4aa3df",
+        "X-Monitor (10ms)": "#88c5f2",
     }
 
     x = np.arange(len(nums))
@@ -71,8 +71,9 @@ def plot_grouped(base_dir, metric, nums=[1,5,10]):
     plt.tick_params(axis='y', labelsize=30)
     plt.yticks(fontsize=30)
     plt.ylabel("Throughput (K ops/sec)", fontsize=30)
+    plt.ylim(0, 1050)
     plt.grid(axis="y", linestyle="--", alpha=0.4)
-    plt.legend(fontsize=16)
+    plt.legend(fontsize=15.5)
     plt.tight_layout()
     plt.show()
 
