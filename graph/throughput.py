@@ -2,6 +2,11 @@ import os
 import re
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+from packaging import version
+
+
+fontsize = 25
 
 THROUGHPUT_RE = re.compile(r"Total QPS\s*=\s*([\d.]+)")
 
@@ -20,6 +25,54 @@ FILE_PATTERNS = {
     "X-Monitor (100ms)":    "xmonitor-{metric}metrics-{num}mcd-interval0.1.txt",
     "X-Monitor (10ms)":     "xmonitor-{metric}metrics-{num}mcd-interval0.01.txt",
 }
+
+
+################# Design Configuration ############
+
+## Catppuccin ###
+# COLORS = {
+#     "No Monitoring":      "#6E738D",  # Subtle gray (text/overlay)
+#     "Netdata (1000ms)":   "#F5A97F",  # Peach
+#     "X-Monitor (1000ms)": "#8BD5CA",  # Teal
+#     "X-Monitor (100ms)":  "#91D7E3",  # Sapphire-cyan
+#     "X-Monitor (10ms)":   "#B7BDF8",  # Mauve
+# }
+
+COLORS = {
+    "No Monitoring":      "#6E738D",  # Neutral gray (base)
+    "Netdata (1000ms)":   "#F5A97F",  # Peach (warm)
+    "X-Monitor (1000ms)": "#5AB8A8",  # Clear teal（強めに差別化）
+    "X-Monitor (100ms)":  "#72A7E3",  # Distinct blue (青方向に大きくずらす)
+    "X-Monitor (10ms)":   "#C7A0E8",  # Lavender-purple（明確に他と離す）
+}
+
+
+# HATCHES = {
+#     "No Monitoring": "",
+#     "Netdata (1000ms)": "//",
+#     "X-Monitor (1000ms)": "\\\\",
+#     "X-Monitor (100ms)": "xx",
+#     "X-Monitor (10ms)": "..",
+# }
+
+HATCHES = {
+    "No Monitoring":      "*****",          # 無地
+    "Netdata (1000ms)":   "////",      # 密な斜線
+    "X-Monitor (1000ms)": "\\\\\\\\",  # 密な逆斜線
+    "X-Monitor (100ms)":  "xxxxx",    # 密なクロス
+    "X-Monitor (10ms)":   "....",    # 密なドット
+}
+
+# HATCHES = {
+#     "No Monitoring": "",
+#     "Netdata (1000ms)": "",
+#     "X-Monitor (1000ms)": "",
+#     "X-Monitor (100ms)": "",
+#     "X-Monitor (10ms)": "",
+# }
+
+EDGE_KW = dict(edgecolor="black", linewidth=1.1)
+####################################################
 
 def collect_throughput(log_dir, metric, n):
     data = {label: [] for label in LABELS}
@@ -64,49 +117,145 @@ def collect_stats_across_runs(base_dir, metric, nums, run_ids=None):
                 stds[label].append(float(np.std(vals, ddof=1)))  # 不偏標準偏差
     return means, stds
 
-def _plot_one_metric(means, stds, nums, colors, save_path):
+# def _plot_one_metric(means, stds, nums, save_path):
+#     x = np.arange(len(nums))
+#     width = 0.13
+#     offsets = np.linspace(-width*2, width*2, len(LABELS))
+
+#     plt.figure(figsize=(10, 7))
+
+#     # for i, label in enumerate(LABELS):
+#     #     plt.bar(
+#     #         x + offsets[i],
+#     #         means[label],
+#     #         yerr=stds[label],
+#     #         width=width,
+#     #         color=COLORS[label],
+#     #         hatch=HATCHES[label],
+#     #         label=label,
+#     #         capsize=4,
+#     #         ecolor="black",
+#     #         error_kw={"elinewidth": 1},
+#     #         **EDGE_KW
+#     #     )
+
+#     # for i, label in enumerate(LABELS):
+#     #     plt.bar(
+#     #         x + offsets[i],
+#     #         means[label],
+#     #         yerr=stds[label],
+#     #         width=width,
+#     #         facecolor="white",           # ← 塗りつぶし白
+#     #         edgecolor="black",           # ← 黒で輪郭をはっきり
+#     #         hatch=HATCHES[label],        # ← 改良した密ハッチ
+#     #         label=label,
+#     #         capsize=4,
+#     #         ecolor="black",
+#     #         error_kw={"elinewidth": 1.2},
+#     #         linewidth=1.3,               # ← 線を太めに
+#     #     )
+
+#     # ▼ x軸：数値だけにする（1, 5, 10）
+#     plt.xticks(x, [str(n) for n in nums], fontsize=fontsize)
+
+#     # ▼ x軸ラベルを追加
+#     plt.xlabel("Number of instances", fontsize=fontsize)
+
+#     plt.tick_params(axis='y', labelsize=fontsize)
+#     plt.ylabel("Throughput (K ops/sec)", fontsize=fontsize)
+#     plt.ylim(0, 1050)
+#     plt.grid(axis="y", linestyle="--", alpha=0.4)
+#     plt.legend(fontsize=15.5)
+
+#     # タイトル行やラベルが切れないように
+#     plt.tight_layout()
+
+#     plt.savefig(save_path, dpi=200, bbox_inches="tight")
+#     print(f"Saved: {save_path}")
+#     plt.show()
+
+def _plot_one_metric(means, stds, nums, save_path):
+    import matplotlib.pyplot as plt
+
     x = np.arange(len(nums))
     width = 0.13
     offsets = np.linspace(-width*2, width*2, len(LABELS))
 
     plt.figure(figsize=(10, 7))
+
+    # ハッチ線を太くして見やすく
+    old_hatch_lw = plt.rcParams.get("hatch.linewidth", 1.0)
+    plt.rcParams["hatch.linewidth"] = 1.6
+
     for i, label in enumerate(LABELS):
+        xpos = x + offsets[i]
+
+        # --- 下レイヤ: ハッチ＋色（枠も色） ---
         plt.bar(
-            x + offsets[i],
-            means[label],
+            xpos, means[label],
             yerr=stds[label],
             width=width,
-            color=colors[label],
-            label=label,
+            facecolor="white",
+            edgecolor=COLORS[label],    # ← ハッチ線は「この色」で描かれる
+            hatch=HATCHES[label],       # ← 密ハッチ
             capsize=4,
             ecolor="black",
-            error_kw={"elinewidth": 1},
+            error_kw={"elinewidth": 1.2},
+            linewidth=1.2,
+            zorder=2,
         )
 
-    # ▼ 以前のスタイルに合わせて "mcd" 表記
-    plt.xticks(x, [f"{n} instance" if n == 1 else f"{n} instances" for n in nums], fontsize=30)
-    plt.tick_params(axis='y', labelsize=30)
-    plt.yticks(fontsize=30)
-    plt.ylabel("Throughput (K ops/sec)", fontsize=30)
+        # --- 上レイヤ: 透明＋黒枠（ハッチなし） ---
+        plt.bar(
+            xpos, means[label],
+            width=width,
+            facecolor=(0, 0, 0, 0),     # 完全透明
+            edgecolor="black",          # ← 枠だけ黒で上書き
+            linewidth=1.4,
+            zorder=3,
+        )
+
+    # 戻す
+    plt.rcParams["hatch.linewidth"] = old_hatch_lw
+
+    # 軸
+    plt.xticks(x, [str(n) for n in nums], fontsize=fontsize)
+    plt.xlabel("Number of instances", fontsize=fontsize)
+    plt.tick_params(axis='y', labelsize=fontsize)
+    plt.ylabel("Throughput (K ops/sec)", fontsize=fontsize)
     plt.ylim(0, 1050)
     plt.grid(axis="y", linestyle="--", alpha=0.4)
-    plt.legend(fontsize=15.5)
-    plt.tight_layout()
 
-    # ▼ 追加：保存してから表示
-    plt.savefig(save_path, dpi=200, bbox_inches="tight")
-    print(f"Saved: {save_path}")
+    # 凡例：ハッチを表示したいので handlelength を少し増やす
+    from matplotlib.patches import Patch
+    import matplotlib.patheffects as pe
 
-    plt.show()
+    legend_handles = []
+    for label in LABELS:
+        # 色つきハッチ (凡例表示用)
+        patch = Patch(
+            facecolor="white",
+            edgecolor=COLORS[label],     # ← ハッチ線色（色）
+            hatch=HATCHES[label],        # ← 密ハッチそのまま
+            linewidth=1.2,
+        )
+        # 黒枠を上書きして見た目を揃える
+        patch.set_path_effects([
+            pe.Stroke(linewidth=1.4, foreground="black"),
+            pe.Normal()
+        ])
+        legend_handles.append(patch)
+
+    plt.legend(
+        handles=legend_handles,
+        labels=LABELS,
+        fontsize=15.5,
+        handlelength=2.0,
+    )
+
+
     
 def plot_grouped_both(base_dir, nums=[1,5,10], run_ids=None):
-    colors = {
-        "No Monitoring": "#999999",
-        "Netdata (1000ms)": "coral",
-        "X-Monitor (1000ms)": "#1f77b4",
-        "X-Monitor (100ms)": "#4aa3df",
-        "X-Monitor (10ms)": "#88c5f2",
-    }
 
     # ▼ 追加：保存ファイル名を base_dir 直下に用意
     kernel_out = os.path.join(base_dir, "throughput_kernel.png")
@@ -114,8 +263,8 @@ def plot_grouped_both(base_dir, nums=[1,5,10], run_ids=None):
 
     # 1枚目: kernel
     means_k, stds_k = collect_stats_across_runs(base_dir, "kernel", nums, run_ids)
-    _plot_one_metric(means_k, stds_k, nums, colors, save_path=kernel_out)
+    _plot_one_metric(means_k, stds_k, nums, save_path=kernel_out)
 
     # 2枚目: user
     means_u, stds_u = collect_stats_across_runs(base_dir, "user", nums, run_ids)
-    _plot_one_metric(means_u, stds_u, nums, colors, save_path=user_out)
+    _plot_one_metric(means_u, stds_u, nums, save_path=user_out)
