@@ -14,7 +14,8 @@ remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
 conf_root = "./conf"
 
-num_memcacheds = [1, 5, 10]
+# num_memcacheds = [1, 5, 10]
+num_memcacheds = list(range(1, 13))
 x_monitor_intervals = [1, 0.1, 0.01]
 metrics = ["user", "kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
