@@ -10,6 +10,23 @@ import matplotlib.pyplot as plt
 
 plt.rcParams["font.size"] = 22
 
+############### Color Configuration #############
+## catppuccin
+# COLORS = {
+#     "Netdata (1000ms)":   "#F5A97F",  # Peach
+#     "X-Monitor (1000ms)": "#5AB8A8",  # Teal
+#     "X-Monitor (100ms)":  "#72A7E3",  # Blue
+#     "X-Monitor (10ms)":   "#C7A0E8",  # Lavender
+# }
+
+## default matplotlib
+COLORS = {
+    "Netdata (1000ms)":   "#d62728",  
+    "X-Monitor (1000ms)": "#ff7f0e",  
+    "X-Monitor (100ms)":  "#2ca02c",  
+    "X-Monitor (10ms)":   "#1f77b4",  
+}
+
 
 # ---------- 基本ユーティリティ ----------
 
@@ -72,7 +89,16 @@ def plot_one(ax, curves, xmax: float):
     """
     markers = ['o', '*', '^', 'x', 's', 'd']
     for i, (x, y, label) in enumerate(curves):
-        ax.plot(x, y, marker=markers[i % len(markers)], markersize=4, label=label)
+        # ax.plot(x, y, marker=markers[i % len(markers)], markersize=4, label=label)
+        color = COLORS.get(label, None)  # ← マップから色取得
+        ax.plot(
+            x, y,
+            marker=markers[i % len(markers)],
+            markersize=4,
+            label=label,
+            color=color,
+            linewidth=2,
+        )
 
     # 90% / 99% 水平線
     ax.axhline(y=0.9, linestyle='--', linewidth=1, dashes=(10, 5), color='black')
@@ -136,23 +162,23 @@ def main_impl(args) -> None:
     for sec, path in xmon_user:
         lat = load_latencies_ms(path, col, skiprows)
         p = cdf(lat)
-        label = f"X-Monitor ({int(sec*1000)} ms)"
+        label = f"X-Monitor ({int(sec*1000)}ms)"
         curves_user.append((lat, p, label))
     # Netdata (固定 1000ms として扱う)
     lat_net_user = load_latencies_ms(net_user, col, skiprows)
     p_net_user = cdf(lat_net_user)
-    curves_user.append((lat_net_user, p_net_user, "Netdata  (1000 ms)"))
+    curves_user.append((lat_net_user, p_net_user, "Netdata (1000ms)"))
 
     # 読み込み（Kernel metrics）
     curves_kernel = []
     for sec, path in xmon_kernel:
         lat = load_latencies_ms(path, col, skiprows)
         p = cdf(lat)
-        label = f"X-Monitor ({int(sec*1000)} ms)"
+        label = f"X-Monitor ({int(sec*1000)}ms)"
         curves_kernel.append((lat, p, label))
     lat_net_kernel = load_latencies_ms(net_kernel, col, skiprows)
     p_net_kernel = cdf(lat_net_kernel)
-    curves_kernel.append((lat_net_kernel, p_net_kernel, "Netdata  (1000 ms)"))
+    curves_kernel.append((lat_net_kernel, p_net_kernel, "Netdata (1000ms)"))
 
     # 描画（2 図）
     print("User metrics CDF")
@@ -168,15 +194,37 @@ def main_impl(args) -> None:
     fig1.tight_layout()
     fig2.tight_layout()
 
+    print("\n[Output directory]")
+    print(f"  {args.dir}")
+    print(f"  (mcd = {mcd})\n")
+
     if args.save:
         out1 = os.path.join(args.dir, f"cdf-usermetrics-{mcd}mcd.png")
         out2 = os.path.join(args.dir, f"cdf-kernelmetrics-{mcd}mcd.png")
         fig1.savefig(out1, dpi=200)
         fig2.savefig(out2, dpi=200)
-        print(f"Saved: {out1}")
-        print(f"Saved: {out2}")
+
+        # --- 追加: 保存したファイル名をプリント ---
+        print(f"[Saved] {out1}")
+        print(f"[Saved] {out2}")
     else:
+        # --- 追加: 保存しないが、保存予定パスを表示 ---
+        out1 = os.path.join(args.dir, f"cdf-usermetrics-{mcd}mcd.png")
+        out2 = os.path.join(args.dir, f"cdf-kernelmetrics-{mcd}mcd.png")
+        print(f"[Not saving files] (use --save to generate PNG)")
+        print(f"  Would save as → {out1}")
+        print(f"  Would save as → {out2}\n")
+
         plt.show()
+    # if args.save:
+    #     out1 = os.path.join(args.dir, f"cdf-usermetrics-{mcd}mcd.png")
+    #     out2 = os.path.join(args.dir, f"cdf-kernelmetrics-{mcd}mcd.png")
+    #     fig1.savefig(out1, dpi=200)
+    #     fig2.savefig(out2, dpi=200)
+    #     print(f"Saved: {out1}")
+    #     print(f"Saved: {out2}")
+    # else:
+    #     plt.show()
 
 
 def main_cli(argv=None) -> None:

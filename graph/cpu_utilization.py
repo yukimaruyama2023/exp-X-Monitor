@@ -232,6 +232,12 @@ def _plot_grouped(ax, util_xmon: Dict[int, Dict[str, float]],
         fig = ax.figure
         fig.text(0.055, 0.80, "log scale", fontsize=18, ha='left', va='bottom')
 
+        ax.yaxis.grid(True, linestyle="--", linewidth=1.3, alpha=0.55)
+        ax.set_axisbelow(True)  # 棒の下にグリッドを敷く
+
+        fig = ax.figure
+        fig.text(0.055, 0.80, "log scale", fontsize=18, ha='left', va='bottom')
+
         #### レジェンド順を固定（Netdata, 1s, 100ms, 10ms） ###
         handles, labels = ax.get_legend_handles_labels()
         order = ["Netdata", "go.d.plugin", "X-Monitor (1000ms)", "X-Monitor (100ms)", "X-Monitor (10ms)"]
