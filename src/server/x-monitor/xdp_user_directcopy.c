@@ -96,8 +96,10 @@ int xdp_udp_echo(struct xdp_md *ctx) {
 
     __u64 payload_offset = sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr);
 
-    int port_array[10] = {11211, 11212, 11213, 11214, 11215,
-                          11216, 11217, 11218, 11219, 11220};
+    int port_array[20] = {11211, 11212, 11213, 11214, 11215,
+                          11216, 11217, 11218, 11219, 11220, 
+                         11221, 11222, 11223, 11224, 11225,
+                         11226, 11227, 11228, 11229, 11230};
 
     for (int i = 0; i < NUM_APP; i++) {
       int total_metrics_size = bpf_user_met_direct_copy(ctx, payload_offset, port_array[i]);

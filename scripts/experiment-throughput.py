@@ -23,7 +23,7 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
-mcd_in_allcores_for_x_monitor = False # default is False; mcd for x_monitor runs in core 1-5, NOTE: you cannot configure mcd and netdata cpu affinity unlike latency experiment
+mcd_in_allcores_for_x_monitor = True # default is False; mcd for x_monitor runs in core 1-5, NOTE: you cannot configure mcd and netdata cpu affinity unlike latency experiment
 cnts = 10
 #########################################################################################################
 
@@ -111,7 +111,18 @@ def run_netdata_client_monitor(num_memcached, metric):
     proc.stdin.close()
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
-def load_xdp(metric):
+def load_xdp(metric, num_memcached):
+    if metric == "user":
+        c_file = os.path.join(x_monitor_root, "xdp_user_directcopy.c")
+        with open(c_file, "r") as f:
+            lines = f.readlines()
+        with open(c_file, "w") as f:
+            for line in lines:
+                if line.startswith("#define NUM_APP"):
+                    f.write(f"#define NUM_APP {num_memcached}\n")
+                else:
+                    f.write(line)
+
     exe_script = "xdp_user_directcopy.sh" if metric == "user" else "xdp_cpu_indirectcopy.sh"
     script_path = os.path.join(x_monitor_root, exe_script)
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
@@ -192,7 +203,7 @@ def run_x_monitor_server(num_memcached, metric):
     run_memcached_for_x_monitor(num_memcached)
 
 def run_x_monitor_client(cnt, num_memcached, metric, x_monitor_interval):
-    load_xdp(metric)
+    load_xdp(metric, num_memcached)
     # monitoring client is called inside run_mutilate_for_x_monitor
     run_mutilate_for_x_monitor(cnt, num_memcached, metric, x_monitor_interval)
     detach_xdp()

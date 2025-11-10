@@ -95,7 +95,18 @@ def run_netdata_client_monitor(num_memcached, metric):
     )
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
-def load_xdp(metric):
+def load_xdp(metric, num_memcached):
+    if metric == "user":
+        c_file = os.path.join(x_monitor_root, "xdp_user_directcopy.c")
+        with open(c_file, "r") as f:
+            lines = f.readlines()
+        with open(c_file, "w") as f:
+            for line in lines:
+                if line.startswith("#define NUM_APP"):
+                    f.write(f"#define NUM_APP {num_memcached}\n")
+                else:
+                    f.write(line)
+
     exe_script = "xdp_user_directcopy.sh" if metric == "user" else "xdp_cpu_indirectcopy.sh"
     script_path = os.path.join(x_monitor_root, exe_script)
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
@@ -136,7 +147,7 @@ def run_x_monitor_server(num_memcached, metric):
     run_memcached(num_memcached)
 
 def run_x_monitor_client(num_memcached, metric, x_monitor_interval):
-    load_xdp(metric)
+    load_xdp(metric, num_memcached)
     run_mutilate(num_memcached)
     run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval)
     detach_xdp()
