@@ -6,7 +6,7 @@
 #include <netinet/in.h> // needed for "IPPROTO_UDP"
 #include "memcached_metrics.h"
 
-#define NUM_APP 6
+#define NUM_APP 12
 
 struct memcached_metrics {
   struct stats stats;

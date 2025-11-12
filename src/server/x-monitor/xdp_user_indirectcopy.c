@@ -47,7 +47,7 @@ static __always_inline void swap_src_dst_udp(struct udphdr *udp) {
 }
 
 SEC("xdp.frags")
-int xdp_udp_echo(struct xdp_md *ctx) {
+int xdp_user_idirect_copy(struct xdp_md *ctx) {
     __u64 start, end, elapsed_cycles;
     bpf_rdtsc((long *)&start);
     void *data     = (void *)(unsigned long)ctx->data;
@@ -86,80 +86,51 @@ int xdp_udp_echo(struct xdp_md *ctx) {
     swap_src_dst_udp(&udp);
     udp.check = 0;
 
+    // bpf_xdp_adjust_tail(ctx, 7000);
+
     bpf_xdp_store_bytes(ctx, 0, &eth, sizeof(struct ethhdr));
     bpf_xdp_store_bytes(ctx, sizeof(struct ethhdr), &ip, sizeof(struct iphdr));
     bpf_xdp_store_bytes(ctx, sizeof(struct ethhdr) + sizeof(struct iphdr), &udp, sizeof(struct udphdr));
 
     /* Header handling is completed. Write monitoring program below! */
-
+  
     __u64 payload_offset = sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr);
     
-    int port_array[10] = {11211, 11212, 11213, 11214, 11215,
-                          11216, 11217, 11218, 11219, 11220};
+    int port_array[100] = {
+      11211, 11212, 11213, 11214, 11215,
+      11216, 11217, 11218, 11219, 11220,
+      11221, 11222, 11223, 11224, 11225,
+      11226, 11227, 11228, 11229, 11230,
+      11231, 11232, 11233, 11234, 11235,
+      11236, 11237, 11238, 11239, 11240,
+      11241, 11242, 11243, 11244, 11245,
+      11246, 11247, 11248, 11249, 11250,
+      11251, 11252, 11253, 11254, 11255,
+      11256, 11257, 11258, 11259, 11260,
+      11261, 11262, 11263, 11264, 11265,
+      11266, 11267, 11268, 11269, 11270,
+      11271, 11272, 11273, 11274, 11275,
+      11276, 11277, 11278, 11279, 11280,
+      11281, 11282, 11283, 11284, 11285,
+      11286, 11287, 11288, 11289, 11290,
+      11291, 11292, 11293, 11294, 11295,
+      11296, 11297, 11298, 11299, 11300,
+      11301, 11302, 11303, 11304, 11305,
+      11306, 11307, 11308, 11309, 11310
+    };
 
     struct memcached_metrics memcached_metrics[NUM_APP];
-
+    
     for (int i = 0; i < NUM_APP; i++) {
-      bpf_get_application_metrics(port_array[i], STATS,
-                                  (char *)&memcached_metrics[i].stats,
-                                  sizeof(struct stats));
-      bpf_get_application_metrics(port_array[i], STATS_STATE,
-                                  (char *)&memcached_metrics[i].stats_state,
-                                  sizeof(struct stats_state));
-      bpf_get_application_metrics(port_array[i], SETTINGS,
-                                  (char *)&memcached_metrics[i].settings,
-                                  sizeof(struct settings));
-      bpf_get_application_metrics(port_array[i], RUSAGE,
-                                  (char *)&memcached_metrics[i].rusage,
-                                  sizeof(struct rusage));
-      bpf_get_application_metrics(port_array[i], THREAD_STATS,
-                                  (char *)&memcached_metrics[i].thread_stats,
-                                  sizeof(struct thread_stats));
-      bpf_get_application_metrics(port_array[i], SLAB_STATS,
-                                  (char *)&memcached_metrics[i].slab_stats,
-                                  sizeof(struct slab_stats));
-      bpf_get_application_metrics(port_array[i], TOTALS,
-                                  (char *)&memcached_metrics[i].totals,
-                                  sizeof(itemstats_t));
+      bpf_user_met_indirect_copy((uint64_t)&memcached_metrics[i], sizeof(struct memcached_metrics), port_array[i]);
     }
     
     for (int i = 0; i < NUM_APP; i++) {
-      if ((void *)payload_offset + sizeof(struct stats) > data_end) {
-        return XDP_PASS;
-      }
-      bpf_xdp_store_bytes(ctx, payload_offset, &memcached_metrics[i].stats, sizeof(struct stats));
-      payload_offset += sizeof(struct stats);
-      if ((void *)payload_offset + sizeof(struct stats_state) > data_end) {
-        return XDP_PASS;
-      }
-      bpf_xdp_store_bytes(ctx, payload_offset, &memcached_metrics[i].stats_state, sizeof(struct stats_state));
-      payload_offset += sizeof(struct stats_state);
-      if ((void *)payload_offset + sizeof(struct settings) > data_end) {
-        return XDP_PASS;
-      }
-      bpf_xdp_store_bytes(ctx, payload_offset, &memcached_metrics[i].settings, sizeof(struct settings));
-      payload_offset += sizeof(struct settings);
-      if ((void *)payload_offset + sizeof(struct rusage) > data_end) {
-        return XDP_PASS;
-      }
-      bpf_xdp_store_bytes(ctx, payload_offset, &memcached_metrics[i].rusage, sizeof(struct rusage));
-      payload_offset += sizeof(struct rusage);
-      if ((void *)payload_offset + sizeof(struct thread_stats) > data_end) {
-        return XDP_PASS;
-      }
-      bpf_xdp_store_bytes(ctx, payload_offset, &memcached_metrics[i].thread_stats, sizeof(struct thread_stats));
-      payload_offset += sizeof(struct thread_stats);
-      if ((void *)payload_offset + sizeof(struct slab_stats) > data_end) {
-        return XDP_PASS;
-      }
-      bpf_xdp_store_bytes(ctx, payload_offset, &memcached_metrics[i].slab_stats, sizeof(struct slab_stats));
-      payload_offset += sizeof(struct slab_stats);
-      if ((void *)payload_offset + sizeof(itemstats_t) > data_end) {
-        return XDP_PASS;
-      }
-      bpf_xdp_store_bytes(ctx, payload_offset, &memcached_metrics[i].totals, sizeof(itemstats_t));
-      payload_offset += sizeof(itemstats_t);
+      if ((void *)payload_offset + sizeof(struct memcached_metrics) > data_end) return XDP_PASS;
+      bpf_xdp_store_bytes(ctx, payload_offset, &memcached_metrics[i], sizeof(struct memcached_metrics));
+      payload_offset += sizeof(struct memcached_metrics);
     }
+
     bpf_rdtsc((long *)&end);
     elapsed_cycles = end - start;
     bpf_printk("Elapsed cycles are %ld", elapsed_cycles);
