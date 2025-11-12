@@ -6,7 +6,7 @@
 #include <netinet/in.h> // needed for "IPPROTO_UDP"
 #include "memcached_metrics.h"
 
-#define NUM_APP 10
+#define NUM_APP 3
 
 struct memcached_metrics {
   struct stats stats;
@@ -47,7 +47,7 @@ static __always_inline void swap_src_dst_udp(struct udphdr *udp) {
 }
 
 SEC("xdp.frags")
-int xdp_user_idirect_copy(struct xdp_md *ctx) {
+int xdp_user_indirectcopy(struct xdp_md *ctx) {
     __u64 start, end, elapsed_cycles;
     bpf_rdtsc((long *)&start);
     void *data     = (void *)(unsigned long)ctx->data;

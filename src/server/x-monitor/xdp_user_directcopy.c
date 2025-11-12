@@ -47,7 +47,7 @@ static __always_inline void swap_src_dst_udp(struct udphdr *udp) {
 }
 
 SEC("xdp.frags")
-int xdp_udp_echo(struct xdp_md *ctx) {
+int xdp_user_directcopy(struct xdp_md *ctx) {
     __u64 start, end, elapsed_cycles;
     bpf_rdtsc((long *)&start);
     void *data     = (void *)(unsigned long)ctx->data;
