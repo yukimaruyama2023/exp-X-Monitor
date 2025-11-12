@@ -26,6 +26,7 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 strict_comparison = True # default is False, which means almost all plugin runs
 all_runs_in_allcores = True # default is False; this is additonal configuration. 
 mcd_in_allcores_for_x_monitor = True # default is False; mcd for x_monitor runs in core 1-5, NOTE: you cannot configure mcd and netdata cpu affinity unlike latency experiment
+xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 cnts = 5
 #########################################################################################################
 
@@ -37,13 +38,13 @@ else:
     kernel_plugin_conf = f"{conf_root}/netdata/plugin/only-disable-go-plugin.conf"
 
 if all_runs_in_allcores:
-    data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/all_runs_in_allcores/{timestamp}"
+    data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/all_runs_in_allcores/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
     mcd_cpu_aff_for_no_monitor = "all-core-execute.sh"
     mcd_cpu_aff_for_netdata = "all-core-execute.sh"
     mcd_cpu_aff_for_x_monitor = "all-core-execute.sh"
     netdata_cpu_aff = "let-netdata-allcore.conf"
 else:
-    data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/ntd_mcd_allcores-{mcd_in_allcores_for_x_monitor}/{timestamp}"
+    data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/ntd_mcd_allcores-{mcd_in_allcores_for_x_monitor}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
     if mcd_in_allcores_for_x_monitor:
         mcd_cpu_aff_for_x_monitor = "all-core-execute.sh"
         mcd_cpu_aff_for_no_monitor = "all-core-execute.sh"
@@ -53,6 +54,11 @@ else:
 
     netdata_cpu_aff = "pin-netdata-core0.conf"
     mcd_cpu_aff_for_netdata = "pin-core1-5-execute.sh"
+
+if xdp_indirectcopy:
+    xdp_user_met_program = "xdp_user_indirectcopy.sh"
+else:
+    xdp_user_met_program = "xdp_user_directcopy.sh"
 
 netdata_conf = {
     "cpu_affinity": f"{conf_root}/netdata/cpu-affinity/{netdata_cpu_aff}",
@@ -119,7 +125,8 @@ def run_netdata_client_monitor(num_memcached, metric):
 
 def load_xdp(metric, num_memcached):
     if metric == "user":
-        c_file = os.path.join(x_monitor_root, "xdp_user_directcopy.c")
+        c_name = "xdp_user_indirectcopy.c" if xdp_indirectcopy else "xdp_user_directcopy.c"
+        c_file = os.path.join(x_monitor_root, c_name)
         with open(c_file, "r") as f:
             lines = f.readlines()
         with open(c_file, "w") as f:
@@ -129,7 +136,7 @@ def load_xdp(metric, num_memcached):
                 else:
                     f.write(line)
 
-    exe_script = "xdp_user_directcopy.sh" if metric == "user" else "xdp_cpu_indirectcopy.sh"
+    exe_script = xdp_user_met_program if metric == "user" else "xdp_cpu_indirectcopy.sh"
     script_path = os.path.join(x_monitor_root, exe_script)
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
     time.sleep(5)

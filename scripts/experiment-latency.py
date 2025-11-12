@@ -24,6 +24,7 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
 ntd_mcd_in_allcores = False # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
+xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 #########################################################################################################
 
 if strict_comparison:
@@ -40,14 +41,18 @@ else:
     mcd_cpu_aff = "pin-core1-5-execute.sh"
     netdata_cpu_aff = "pin-netdata-core0.conf"
 
-
 netdata_conf = {
     "cpu_affinity": f"{conf_root}/netdata/cpu-affinity/{netdata_cpu_aff}",
     "user_plugin_conf": user_plugin_conf,
     "kernel_plugin_conf": kernel_plugin_conf,
 }
 
-data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/{timestamp}"
+if xdp_indirectcopy:
+    xdp_user_met_program = "xdp_user_indirectcopy.sh"
+else:
+    xdp_user_met_program = "xdp_user_directcopy.sh"
+
+data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
 
 
 def run_memcached(num_memcached):
@@ -98,7 +103,8 @@ def run_netdata_client_monitor(num_memcached, metric):
 
 def load_xdp(metric, num_memcached):
     if metric == "user":
-        c_file = os.path.join(x_monitor_root, "xdp_user_directcopy.c")
+        c_name = "xdp_user_indirectcopy.c" if xdp_indirectcopy else "xdp_user_directcopy.c"
+        c_file = os.path.join(x_monitor_root, c_name)
         with open(c_file, "r") as f:
             lines = f.readlines()
         with open(c_file, "w") as f:
@@ -108,7 +114,7 @@ def load_xdp(metric, num_memcached):
                 else:
                     f.write(line)
 
-    exe_script = "xdp_user_directcopy.sh" if metric == "user" else "xdp_cpu_indirectcopy.sh"
+    exe_script = xdp_user_met_program if metric == "user" else "xdp_cpu_indirectcopy.sh"
     script_path = os.path.join(x_monitor_root, exe_script)
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
     time.sleep(5)
