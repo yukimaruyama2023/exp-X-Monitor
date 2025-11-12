@@ -205,8 +205,8 @@ def x_monitor_monitoring():
 
 def main():
     setup()
-    x_monitor_monitoring()
     netdata_monitoring()
+    x_monitor_monitoring()
 
 if __name__ == "__main__":
     main()

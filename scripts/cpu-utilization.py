@@ -22,7 +22,7 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 TRACE_READERS = []
 
 ############################################ Configuration ###############################################
-
+enable_mutilate = False # default is False
 #########################################################################################################
 
 user_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
@@ -36,7 +36,7 @@ netdata_conf = {
     "kernel_plugin_conf": kernel_plugin_conf,
 }
 
-data_dir = f"{local_data_root}/monitoring_cpu_utilization/{timestamp}"
+data_dir = f"{local_data_root}/monitoring_cpu_utilization/enable_mutilate-{enable_mutilate}/{timestamp}"
 
 
 def run_memcached(num_memcached):
@@ -66,7 +66,7 @@ def run_netdata_client_monitor(num_memcached, metric):
     else:
         stdin_input = "1\n0\n"
     cmd = (
-        f"cd {remote_monitoring_client} &&"
+        f"cd {remote_monitoring_client} && "
         f"./client_netdata test.csv"
     )
     proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
@@ -139,6 +139,15 @@ def calculate_x_monitor_cpu(num_memcached, metric, x_monitor_interval):
     time.sleep(5)
     print(f"=== [Trace reader started in background -> {out_path}] ===")
 
+def stop_mutilate():
+    subprocess.run(["ssh", remote_host, "pkill", "-f", "mutilate"])
+
+def run_mutilate(num_memcached):
+    print(f"=== [Start] Running mutilate {num_memcached} ===")
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
+    subprocess.Popen(f"ssh {remote_host} {remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-run.sh".split())
+    print(f"=== [End] Running mutilate {num_memcached} ===")
+
 def stop_monitoring_client_for_netdata():
     subprocess.run(["ssh", remote_host, "pkill", "-f", "client_netdata"])
 
@@ -168,6 +177,8 @@ def run_netdata_server(num_memcached, metric):
     run_netdata(num_memcached, metric)
 
 def run_netdata_client(num_memcached, metric):
+    if enable_mutilate:
+        run_mutilate(num_memcached)
     run_netdata_client_monitor(num_memcached, metric)
 
 def run_x_monitor_server(num_memcached, metric):
@@ -175,15 +186,20 @@ def run_x_monitor_server(num_memcached, metric):
     load_xdp(metric, num_memcached)
 
 def run_x_monitor_client(num_memcached, metric, x_monitor_interval):
+    if enable_mutilate:
+        run_mutilate(num_memcached)
     run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval)
-
 
 def stop_for_netdata():
     stop_monitoring_client_for_netdata()
+    if enable_mutilate:
+        stop_mutilate()
     stop_memcached()
 
 def stop_for_x_monitor():
     stop_bpf_tracepipe()
+    if enable_mutilate:
+        stop_mutilate()
     stop_memcached()
     detach_xdp()
 

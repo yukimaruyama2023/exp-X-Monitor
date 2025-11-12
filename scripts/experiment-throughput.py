@@ -24,8 +24,9 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
+all_runs_in_allcores = True # default is False; this is additonal configuration. 
 mcd_in_allcores_for_x_monitor = True # default is False; mcd for x_monitor runs in core 1-5, NOTE: you cannot configure mcd and netdata cpu affinity unlike latency experiment
-cnts = 10
+cnts = 5
 #########################################################################################################
 
 if strict_comparison:
@@ -35,25 +36,29 @@ else:
     user_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
     kernel_plugin_conf = f"{conf_root}/netdata/plugin/only-disable-go-plugin.conf"
 
-if mcd_in_allcores_for_x_monitor:
-    mcd_cpu_aff_for_x_monitor = "all-core-execute.sh"
+if all_runs_in_allcores:
+    data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/all_runs_in_allcores/{timestamp}"
     mcd_cpu_aff_for_no_monitor = "all-core-execute.sh"
+    mcd_cpu_aff_for_netdata = "all-core-execute.sh"
+    mcd_cpu_aff_for_x_monitor = "all-core-execute.sh"
+    netdata_cpu_aff = "let-netdata-allcore.conf"
 else:
-    mcd_cpu_aff_for_x_monitor = "pin-core1-5-execute.sh"
-    mcd_cpu_aff_for_no_monitor = "pin-core1-5-execute.sh"
+    data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/ntd_mcd_allcores-{mcd_in_allcores_for_x_monitor}/{timestamp}"
+    if mcd_in_allcores_for_x_monitor:
+        mcd_cpu_aff_for_x_monitor = "all-core-execute.sh"
+        mcd_cpu_aff_for_no_monitor = "all-core-execute.sh"
+    else:
+        mcd_cpu_aff_for_x_monitor = "pin-core1-5-execute.sh"
+        mcd_cpu_aff_for_no_monitor = "pin-core1-5-execute.sh"
 
-netdata_cpu_aff = "pin-netdata-core0.conf"
-mcd_cpu_aff_for_netdata = "pin-core1-5-execute.sh"
+    netdata_cpu_aff = "pin-netdata-core0.conf"
+    mcd_cpu_aff_for_netdata = "pin-core1-5-execute.sh"
 
 netdata_conf = {
     "cpu_affinity": f"{conf_root}/netdata/cpu-affinity/{netdata_cpu_aff}",
     "user_plugin_conf": user_plugin_conf,
     "kernel_plugin_conf": kernel_plugin_conf,
 }
-
-# change output data_dir
-data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/ntd_mcd_allcores-{mcd_in_allcores_for_x_monitor}/{timestamp}"
-
 
 def run_memcached_for_x_monitor(num_memcached):
     print(f"=== [Start] Running Memcached {num_memcached} instances, affinity is {mcd_cpu_aff_for_x_monitor} ===")
