@@ -6,8 +6,9 @@ import matplotlib
 from packaging import version
 
 
-fontsize = 25
-legend_fontsize = 17
+fontsize = 25 # default is 25
+legend_fontsize = 17 # default is 17
+figsize = (10, 7)  # default is (10, 7)
 
 THROUGHPUT_RE = re.compile(r"Total QPS\s*=\s*([\d.]+)")
 
@@ -108,7 +109,7 @@ def _plot_one_metric(means, stds, nums, save_path):
     width = 0.13
     offsets = np.linspace(-width*2, width*2, len(LABELS))
 
-    plt.figure(figsize=(10, 7))
+    plt.figure(figsize=figsize)
 
     # ハッチ線を太くして見やすく
     old_hatch_lw = plt.rcParams.get("hatch.linewidth", 1.0)
@@ -200,57 +201,8 @@ def _plot_one_metric(means, stds, nums, save_path):
         frameon=True                 # 枠線なしで上品に
         # edgecolor="black"
     )
-
-# def _plot_one_metric(means, stds, nums, save_path):
-#     import matplotlib.pyplot as plt
-
-#     x = np.arange(len(nums))
-#     width = 0.13
-#     offsets = np.linspace(-width*2, width*2, len(LABELS))
-
-#     plt.figure(figsize=(10, 7))
-
-#     # ハッチ線を少し太めに（必要に応じて 1.4〜1.8）
-#     old_hlw = plt.rcParams.get("hatch.linewidth", 1.0)
-#     plt.rcParams["hatch.linewidth"] = 
-
-
-#     for i, label in enumerate(LABELS):
-#         plt.bar(
-#             x + offsets[i], means[label],
-#             yerr=stds[label], width=width,
-#             facecolor="white",            # 塗りは白
-#             edgecolor="black",            # 枠は黒
-#             hatch=HATCHES[label],         # 密ハッチ
-#             hatch_color=COLORS[label],    # ← 各系列の色をここで指定（3.7+）
-#             linewidth=1.3,
-#             capsize=4, ecolor="black",
-#             error_kw={"elinewidth": 1.2},
-#         )
-
-#     # 軸など
-#     plt.rcParams["hatch.linewidth"] = old_hlw
-#     plt.xticks(x, [str(n) for n in nums], fontsize=fontsize)
-#     plt.xlabel("Number of instances", fontsize=fontsize)
-#     plt.tick_params(axis='y', labelsize=fontsize)
-#     plt.ylabel("Throughput (K ops/sec)", fontsize=fontsize)
-#     plt.ylim(0, 1050)
-#     plt.grid(axis="y", linestyle="--", alpha=0.4)
-
-#     # 凡例（1レイヤ用：hatch_color をそのまま使う）
-#     from matplotlib.patches import Patch
-#     legend_handles = [
-#         Patch(facecolor="white", edgecolor="black",
-#               hatch=HATCHES[label], hatch_color=COLORS[label],
-#               linewidth=1.3, label=label)
-#         for label in LABELS
-#     ]
-#     plt.legend(handles=legend_handles, fontsize=15.5, handlelength=2.0)
-
-#     plt.tight_layout()
-#     plt.savefig(save_path, dpi=300, bbox_inches="tight")
-#     print(f"Saved: {save_path}")
-#     plt.show()
+    plt.savefig(save_path, bbox_inches="tight", dpi=300)
+    
 
     
 def plot_grouped_both(base_dir, nums=[1,5,10], run_ids=None):
