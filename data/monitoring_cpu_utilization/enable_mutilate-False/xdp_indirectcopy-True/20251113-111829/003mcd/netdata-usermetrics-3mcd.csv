@@ -1,0 +1,31 @@
+Linux 6.8.12+ (sendai) 	11/13/2025 	_x86_64_	(6 CPU)
+
+11:30:44 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+11:31:24 AM     0       660    0.03    0.00    0.00    0.00    0.03     5  systemd-journal
+11:31:24 AM   111    712225    3.08    1.77    0.00    0.80    4.85     0  netdata
+11:31:24 AM   111    712602    0.10    0.07    0.00    0.03    0.18     0  bash
+11:31:24 AM   111    712621    0.00    0.03    0.00    0.00    0.03     0  ebpf.plugin
+11:31:24 AM   111    712622    0.00    0.05    0.00    0.00    0.05     0  debugfs.plugin
+11:31:24 AM   111    712627    0.07    0.03    0.00    0.00    0.10     0  go.d.plugin
+11:31:24 AM   111    712629    0.30    0.68    0.00    0.05    0.97     0  apps.plugin
+11:31:24 AM   111    712632    0.00    0.00    0.00    0.00    0.00     0  sd-jrnl.plugin
+11:31:24 AM   111    712635    0.00    0.00    0.00    0.00    0.00     0  nfacct.plugin
+11:31:24 AM   111    712638    0.00    0.00    0.00    0.00    0.00     0  NETWORK-VIEWER
+11:31:24 AM   111    712641    0.00    0.00    0.00    0.00    0.00     0  otel-plugin
+11:31:24 AM  1000    712830    0.20    0.00    0.00    0.00    0.20     1  ssh
+11:31:24 AM  1000    712831    0.00    0.00    0.00    0.00    0.00     5  sh
+
+Average:      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+Average:        0       660    0.03    0.00    0.00    0.00    0.03     -  systemd-journal
+Average:      111    712225    3.08    1.77    0.00    0.80    4.85     -  netdata
+Average:      111    712602    0.10    0.07    0.00    0.03    0.18     -  bash
+Average:      111    712621    0.00    0.03    0.00    0.00    0.03     -  ebpf.plugin
+Average:      111    712622    0.00    0.05    0.00    0.00    0.05     -  debugfs.plugin
+Average:      111    712627    0.07    0.03    0.00    0.00    0.10     -  go.d.plugin
+Average:      111    712629    0.30    0.68    0.00    0.05    0.97     -  apps.plugin
+Average:      111    712632    0.00    0.00    0.00    0.00    0.00     -  sd-jrnl.plugin
+Average:      111    712635    0.00    0.00    0.00    0.00    0.00     -  nfacct.plugin
+Average:      111    712638    0.00    0.00    0.00    0.00    0.00     -  NETWORK-VIEWER
+Average:      111    712641    0.00    0.00    0.00    0.00    0.00     -  otel-plugin
+Average:     1000    712830    0.20    0.00    0.00    0.00    0.20     -  ssh
+Average:     1000    712831    0.00    0.00    0.00    0.00    0.00     -  sh
