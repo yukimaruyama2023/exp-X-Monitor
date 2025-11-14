@@ -25,7 +25,7 @@ TRACE_READERS = []
 ############################################ Configuration ###############################################
 enable_mutilate = False # default is False
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
-#########################################################################################################
+##########################################################################################################
 
 user_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
 kernel_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"

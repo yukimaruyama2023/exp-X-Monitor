@@ -23,7 +23,7 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
-ntd_mcd_in_allcores = False # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
+ntd_mcd_in_allcores = True # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 #########################################################################################################
 

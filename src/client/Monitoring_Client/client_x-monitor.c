@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
   }
 
   float INTERVAL;
-  int NUMMONITORING;
+  long NUMMONITORING;
   printf("Enter interval (unit is second): ");
   scanf("%f", &INTERVAL);
   NUMMONITORING = NUMMONITORING_BASELINE / INTERVAL;
