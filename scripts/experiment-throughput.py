@@ -145,19 +145,33 @@ def detach_xdp():
     script_path = os.path.join(x_monitor_root, "off.sh")
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
 
+# def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
+#     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
+#     if x_monitor_interval == 1:
+#         stdin_input = "1\n"
+#     elif x_monitor_interval == 0.1:
+#         stdin_input = "0.1\n"
+#     else:
+#         stdin_input = "0.01\n"
+#     cmd = (
+#         f"cd {remote_monitoring_client} &&"
+#         # output file is test.csv
+#         f"./client_x-monitor test.csv"
+#     )
+#     proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
+#                         stdin=subprocess.PIPE,
+#                         text=True)
+#     proc.stdin.write(stdin_input)
+#     proc.stdin.close()
+#     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
+
 def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-    if x_monitor_interval == 1:
-        stdin_input = "1\n"
-    elif x_monitor_interval == 0.1:
-        stdin_input = "0.1\n"
-    else:
-        stdin_input = "0.01\n"
+    stdin_input = f"{x_monitor_interval}\n"
     cmd = (
         f"cd {remote_monitoring_client} &&"
         # output file is test.csv
         f"./client_x-monitor test.csv"
-    )
     proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
                         stdin=subprocess.PIPE,
                         text=True)

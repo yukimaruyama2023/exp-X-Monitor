@@ -105,11 +105,23 @@ def detach_xdp():
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
     time.sleep(5)
 
+# def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
+#     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
+#     stdin_input = "1\n" if x_monitor_interval == 1 else ("0.1\n" if x_monitor_interval == 0.1 else "0.01\n")
+#     cmd = f"cd {remote_monitoring_client} && ./client_x-monitor test.csv"
+#     subprocess.run(["ssh", remote_host, cmd], input=stdin_input, text=True, check=True)
+#     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
+
 def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-    stdin_input = "1\n" if x_monitor_interval == 1 else ("0.1\n" if x_monitor_interval == 0.1 else "0.01\n")
+    stdin_input = f"{x_monitor_interval}\n"
     cmd = f"cd {remote_monitoring_client} && ./client_x-monitor test.csv"
-    subprocess.run(["ssh", remote_host, cmd], input=stdin_input, text=True, check=True)
+    subprocess.run(
+        ["ssh", remote_host, cmd],
+        input=stdin_input,
+        text=True,
+        check=True
+    )
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
 def calculate_netdata_cpu(num_memcached, metric):
