@@ -8,4 +8,4 @@
   -s 10.10.10.1:11215 \
   -s 10.10.10.1:11216 \
   -s 10.10.10.1:11217 \
-  -T 48 -c 1 -q 0 -u 0 -i exponential:1 -t 300 --noload --depth 1 --records 1000000
+  -T 48 -c 1 -q 0 -u 0 -i exponential:1 -t 30000 --noload --depth 1 --records 1000000
