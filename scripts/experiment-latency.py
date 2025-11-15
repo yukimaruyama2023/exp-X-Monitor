@@ -114,7 +114,7 @@ def load_xdp(metric, num_memcached):
                 else:
                     f.write(line)
 
-    exe_script = xdp_user_met_program if metric == "user" else "xdp_cpu_indirectcopy.sh"
+    exe_script = xdp_user_met_program if metric == "user" else "xdp_kernel_directcopy.sh"
     script_path = os.path.join(x_monitor_root, exe_script)
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
     time.sleep(5)
@@ -122,25 +122,40 @@ def load_xdp(metric, num_memcached):
 def detach_xdp():
     script_path = os.path.join(x_monitor_root, "off.sh")
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
+#
+# def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
+#     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
+#     if x_monitor_interval == 1:
+#         stdin_input = "1\n"
+#     elif x_monitor_interval == 0.1:
+#         stdin_input = "0.1\n"
+#     else:
+#         stdin_input = "0.01\n"
+#     cmd = (
+#         f"cd {remote_monitoring_client} &&"
+#         f"./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
+#     )
+#     subprocess.run(f"ssh {remote_host} {cmd}".split(),
+#                    input=stdin_input,
+#                    text=True
+#     )
+#     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
 def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
-    print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-    if x_monitor_interval == 1:
-        stdin_input = "1\n"
-    elif x_monitor_interval == 0.1:
-        stdin_input = "0.1\n"
-    else:
-        stdin_input = "0.01\n"
-    cmd = (
-        f"cd {remote_monitoring_client} &&"
-        f"./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
-    )
-    subprocess.run(f"ssh {remote_host} {cmd}".split(),
-                   input=stdin_input,
-                   text=True
-    )
-    print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
+print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
+stdin_input = f"{x_monitor_interval}\n"   # ★ ここだけ変更
 
+cmd = (
+    f"cd {remote_monitoring_client} &&"
+    f"./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/"
+    f"xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
+)
+subprocess.run(
+    f"ssh {remote_host} {cmd}".split(),
+    input=stdin_input,
+    text=True,
+)
+print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
 def run_netdata_server(num_memcached, metric):
     run_memcached(num_memcached)
@@ -211,8 +226,8 @@ def x_monitor_monitoring():
 
 def main():
     setup()
-    netdata_monitoring()
     x_monitor_monitoring()
+    netdata_monitoring()
 
 if __name__ == "__main__":
     main()
