@@ -16,7 +16,8 @@ conf_root = "./conf"
 
 # num_memcacheds = [1, 5, 10]
 num_memcacheds = list(range(1, 13))
-x_monitor_intervals = [1, 0.1, 0.01]
+# x_monitor_intervals = [1, 0.1, 0.01]
+x_monitor_intervals = [0.001, 0.0005, 0.0001]
 metrics = ["user", "kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
@@ -142,20 +143,20 @@ def detach_xdp():
 #     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
 def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
-print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-stdin_input = f"{x_monitor_interval}\n"   # ★ ここだけ変更
+    print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
+    stdin_input = f"{x_monitor_interval}\n"   # ★ ここだけ変更
 
-cmd = (
-    f"cd {remote_monitoring_client} &&"
-    f"./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/"
-    f"xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
-)
-subprocess.run(
-    f"ssh {remote_host} {cmd}".split(),
-    input=stdin_input,
-    text=True,
-)
-print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
+    cmd = (
+        f"cd {remote_monitoring_client} &&"
+        f"./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/"
+        f"xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
+    )
+    subprocess.run(
+        f"ssh {remote_host} {cmd}".split(),
+        input=stdin_input,
+        text=True,
+    )
+    print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
 def run_netdata_server(num_memcached, metric):
     run_memcached(num_memcached)
