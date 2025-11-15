@@ -7,12 +7,20 @@ import signal
 import sys
 import datetime
 
+############################################ Configuratin ###############################################
+strict_comparison = True # default is False, which means almost all plugin runs
+ntd_mcd_in_allcores = True # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
+xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
+mutilate_num_thread = 35 # default is True, but previous experiments are conducted as false (2025-11-12)
+#########################################################################################################
+
+
 remote_host = "hamatora"
-remote_mutilate_script_latency = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/exp-latency/"
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
 remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
 conf_root = "./conf"
+remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/{mutilate_num_thread}thread/exp-latency/"
 
 # num_memcacheds = [1, 5, 10]
 num_memcacheds = list(range(1, 13))
@@ -21,12 +29,6 @@ x_monitor_intervals = [0.001, 0.0005, 0.0001]
 metrics = ["user", "kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-
-############################################ Configuratin ###############################################
-strict_comparison = True # default is False, which means almost all plugin runs
-ntd_mcd_in_allcores = True # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
-xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
-#########################################################################################################
 
 if strict_comparison:
     user_plugin_conf  = f"{conf_root}/netdata/plugin/only-go-plugin.conf"
@@ -53,7 +55,7 @@ if xdp_indirectcopy:
 else:
     xdp_user_met_program = "xdp_user_directcopy.sh"
 
-data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
+data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/mutilate-{mutilate_num_thread}thread/{timestamp}"
 
 
 def run_memcached(num_memcached):
