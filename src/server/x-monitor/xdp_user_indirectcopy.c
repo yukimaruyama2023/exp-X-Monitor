@@ -6,7 +6,7 @@
 #include <netinet/in.h> // needed for "IPPROTO_UDP"
 #include "memcached_metrics.h"
 
-#define NUM_APP 12
+#define NUM_APP 1
 
 struct memcached_metrics {
   struct stats stats;
@@ -122,7 +122,11 @@ int xdp_user_indirectcopy(struct xdp_md *ctx) {
     struct memcached_metrics memcached_metrics[NUM_APP];
     
     for (int i = 0; i < NUM_APP; i++) {
-      bpf_user_met_indirect_copy((uint64_t)&memcached_metrics[i], sizeof(struct memcached_metrics), port_array[i]);
+      int metrics_size = 0;
+      if ((metrics_size = bpf_user_met_indirect_copy((uint64_t)&memcached_metrics[i], sizeof(struct memcached_metrics), port_array[i])) < 0) {
+        bpf_printk("[ABORTED] port: %d, total_metrics_size is %d \n", port_array[i], metrics_size);
+        return XDP_ABORTED;
+      }
     }
     
     for (int i = 0; i < NUM_APP; i++) {
