@@ -9,8 +9,8 @@ import datetime
 
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
-ntd_mcd_in_allcores = True # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
-xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
+ntd_mcd_in_allcores = False # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
+xdp_indirectcopy = False # default is True, but previous experiments are conducted as false (2025-11-12)
 mutilate_num_thread = 35 # default is True, but previous experiments are conducted as false (2025-11-12)
 #########################################################################################################
 
@@ -24,10 +24,12 @@ remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/m
 
 # num_memcacheds = [1, 5, 10]
 num_memcacheds = list(range(1, 13))
-# x_monitor_intervals = [1, 0.1, 0.01]
-x_monitor_intervals = [0.001, 0.0005, 0.0001]
-# metrics = ["user", "kernel"]
-metrics = ["kernel", "user"]
+x_monitor_intervals = [1, 0.1, 0.01]
+# x_monitor_intervals = [0.001, 0.0005, 0.0001]
+# x_monitor_intervals = [0.0001]
+metrics = ["user", "kernel"]
+# metrics = ["kernel", "user"]
+# metrics = ["kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 

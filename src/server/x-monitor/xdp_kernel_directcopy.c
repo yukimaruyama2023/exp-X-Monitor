@@ -81,16 +81,20 @@ int xdp_kernel_monitoring(struct xdp_md *ctx) {
       return XDP_ABORTED;
     }
     payload_offset += metrics_size;
-    if ((metrics_size = bpf_get_disk_metrics_direct_copy(ctx, payload_offset)) < 0) {
-      bpf_printk("disk metrics fail: metrics size is %d\n", metrics_size);
-      return XDP_ABORTED;
-    }
-    payload_offset += metrics_size;
-    if ((metrics_size = bpf_get_memory_metrics_direct_copy(ctx, payload_offset)) < 0) {
-      bpf_printk("memory metrics fail: metrics size is %d\n", metrics_size);
-      return XDP_ABORTED;
-    }
-    payload_offset += metrics_size;
+
+    /* collectiong disk and memory metrics crashes kernel*/
+    // if ((metrics_size = bpf_get_disk_metrics_direct_copy(ctx, payload_offset)) < 0) {
+    //   bpf_printk("disk metrics fail: metrics size is %d\n", metrics_size);
+    //   return XDP_ABORTED;
+    // }
+    // payload_offset += metrics_size;
+    // bpf_printk("disk metrics size is %d\n", metrics_size);
+    // if ((metrics_size = bpf_get_memory_metrics_direct_copy(ctx, payload_offset)) < 0) {
+    //   bpf_printk("memory metrics fail: metrics size is %d\n", metrics_size);
+    //   return XDP_ABORTED;
+    // }
+    // payload_offset += metrics_size;
+    //  bpf_printk("memory metrics size is %d\n", metrics_size);
     if ((metrics_size = bpf_get_ipv4_metrics_direct_copy(ctx, payload_offset)) < 0) {
       bpf_printk("ipv4 metrics fail: metrics size is %d\n", metrics_size);
       return XDP_ABORTED;
