@@ -75,33 +75,31 @@ int xdp_kernel_monitoring(struct xdp_md *ctx) {
     __u64 payload_offset = sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct udphdr);
 
     
-    long cpu_metrics[10] = {0,0,0,0,0,0,0,0,0,0};
-    bpf_get_all_cpu_metrics(cpu_metrics);
-    bpf_xdp_store_bytes(ctx, payload_offset, cpu_metrics, sizeof(cpu_metrics));
-
     int metrics_size;
+    if ((metrics_size = bpf_get_cpu_metrics_direct_copy(ctx, payload_offset)) < 0) {
+      bpf_printk("disk cpu fail: metrics size is %d\n", metrics_size);
+      return XDP_ABORTED;
+    }
+    payload_offset += metrics_size;
     if ((metrics_size = bpf_get_disk_metrics_direct_copy(ctx, payload_offset)) < 0) {
       bpf_printk("disk metrics fail: metrics size is %d\n", metrics_size);
-      return XDP_PASS;
+      return XDP_ABORTED;
     }
     payload_offset += metrics_size;
     if ((metrics_size = bpf_get_memory_metrics_direct_copy(ctx, payload_offset)) < 0) {
       bpf_printk("memory metrics fail: metrics size is %d\n", metrics_size);
-      return XDP_PASS;
+      return XDP_ABORTED;
     }
     payload_offset += metrics_size;
     if ((metrics_size = bpf_get_ipv4_metrics_direct_copy(ctx, payload_offset)) < 0) {
       bpf_printk("ipv4 metrics fail: metrics size is %d\n", metrics_size);
-      return XDP_PASS;
+      return XDP_ABORTED;
     }
     payload_offset += metrics_size;
     if ((metrics_size = bpf_get_ipv4_tcp_udp_metrics_direct_copy(ctx, payload_offset)) < 0) {
       bpf_printk("ipv4 metrics fail: metrics size is %d\n", metrics_size);
-      return XDP_PASS;
+      return XDP_ABORTED;
     }
-   
-    bpf_get_disk_metrics_direct_copy(ctx, payload_offset);
-
 
     bpf_rdtsc((long *)&end);
     elapsed_cycles = end - start;
