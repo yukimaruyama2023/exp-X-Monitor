@@ -26,7 +26,8 @@ remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/m
 num_memcacheds = list(range(1, 13))
 # x_monitor_intervals = [1, 0.1, 0.01]
 x_monitor_intervals = [0.001, 0.0005, 0.0001]
-metrics = ["user", "kernel"]
+# metrics = ["user", "kernel"]
+metrics = ["kernel", "user"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 

@@ -95,7 +95,7 @@ def load_xdp(metric, num_memcached):
                 else:
                     f.write(line)
 
-    exe_script = xdp_user_met_program if metric == "user" else "xdp_cpu_indirectcopy.sh"
+    exe_script = xdp_user_met_program if metric == "user" else "xdp_kernel_directcopy.sh"
     script_path = os.path.join(x_monitor_root, exe_script)
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
     time.sleep(5)
