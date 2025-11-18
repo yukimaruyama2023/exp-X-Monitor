@@ -30,6 +30,10 @@ int main(int argc, char **argv) {
   scanf("%f", &INTERVAL);
   NUMMONITORING = NUMMONITORING_BASELINE / INTERVAL;
 
+  if (INTERVAL == 1.0f) {
+    NUMMONITORING *= 2;
+  }
+
   memset(&send_addr, 0, sizeof(send_addr));
   send_addr.sin_family = AF_INET;
   inet_aton(DEST_ADDR, &send_addr.sin_addr);

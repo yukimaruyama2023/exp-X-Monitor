@@ -13,7 +13,6 @@
 #define RECV_PORT 22224
 #define RES_LEN 60000
 // #define NUMMONITORING_BASELINE 60
-#define NUMMONITORING_BASELINE 300
 #define NUMMONITORING_BASELINE 60
 
 char res[RES_LEN];
@@ -38,6 +37,9 @@ int main(int argc, char **argv) {
   scanf("%f", &INTERVAL);
   NUMMONITORING = NUMMONITORING_BASELINE / INTERVAL;
 
+  if (INTERVAL == 1.0f) {
+    NUMMONITORING *= 2;
+  }
   int metrics;
   printf("Enter 0 or 1 which represent system metrics, user metrics "
          "respectively: ");
