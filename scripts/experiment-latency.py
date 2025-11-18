@@ -11,13 +11,11 @@ import datetime
 strict_comparison = True # default is False, which means almost all plugin runs
 ntd_mcd_in_allcores = True # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
-prioritised = True # default is False. In true case, ntd_mcd_in_allcores set to be True
+prioritized = True # default is False. In true case, ntd_mcd_in_allcores set to be True
 ##############################################################################################################
 # mutilate_num_thread = 35 # default is True, but previous experiments are conducted as false (2025-11-12) # NOTE: artifact configuration
 ###############################################################################################################
 
-if priorized == True:
-    ntd_mcd_in_allcores = True
 
 remote_host = "hamatora"
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
@@ -39,6 +37,27 @@ metrics = ["user", "kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
+# if prioritized == True:
+#     ntd_mcd_in_allcores = True # 強制的にここは True にする．そうしないと実験としておかしい．
+#
+# if strict_comparison:
+#     user_plugin_conf  = f"{conf_root}/netdata/plugin/only-go-plugin.conf"
+#     kernel_plugin_conf = f"{conf_root}/netdata/plugin/no-plugin.conf"
+# else:
+#     user_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
+#     kernel_plugin_conf = f"{conf_root}/netdata/plugin/only-disable-go-plugin.conf"
+#
+#
+# if ntd_mcd_in_allcores:
+#     mcd_cpu_aff = "all-core-execute.sh"
+#     netdata_cpu_aff = "let-netdata-allcore.conf"
+# else:
+#     mcd_cpu_aff = "pin-core1-5-execute.sh"
+#     netdata_cpu_aff = "pin-netdata-core0.conf"
+#
+# if prioritized == True:
+#     netdata_cpu_aff = "let-netdata-allcore-prioritized.conf"
+
 if strict_comparison:
     user_plugin_conf  = f"{conf_root}/netdata/plugin/only-go-plugin.conf"
     kernel_plugin_conf = f"{conf_root}/netdata/plugin/no-plugin.conf"
@@ -46,9 +65,17 @@ else:
     user_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
     kernel_plugin_conf = f"{conf_root}/netdata/plugin/only-disable-go-plugin.conf"
 
+# prioritized のときは「必ず all-core」で実験する
+if prioritized:
+    ntd_mcd_in_allcores = True
+
 if ntd_mcd_in_allcores:
     mcd_cpu_aff = "all-core-execute.sh"
-    netdata_cpu_aff = "let-netdata-allcore.conf"
+    netdata_cpu_aff = (
+        "let-netdata-allcore-prioritized.conf"
+        if prioritized
+        else "let-netdata-allcore.conf"
+    )
 else:
     mcd_cpu_aff = "pin-core1-5-execute.sh"
     netdata_cpu_aff = "pin-netdata-core0.conf"
@@ -64,8 +91,8 @@ if xdp_indirectcopy:
 else:
     xdp_user_met_program = "xdp_user_directcopy.sh"
 
-# data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/mutilate-{mutilate_num_thread}thread/{timestamp}"  # NOTE: artifact configuration
-data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/numa0/{timestamp}"
+# data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/prioritized-{prioritized}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/mutilate-{mutilate_num_thread}thread/{timestamp}"  # NOTE: artifact configuration
+data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/prioritized-{prioritized}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/numa0/{timestamp}"
 
 
 def run_memcached(num_memcached):
@@ -89,6 +116,7 @@ def run_netdata(num_memcached, metric):
         subprocess.run(f"sudo cp {netdata_conf["user_plugin_conf"]} /etc/netdata/netdata.conf".split())
     else:
         subprocess.run(f"sudo cp {netdata_conf["kernel_plugin_conf"]} /etc/netdata/netdata.conf".split())
+    subprocess.run(f"sudo systemctl daemon-reload".split())
     subprocess.run(f"sudo systemctl restart netdata".split())
     print(f"=== [End] Running Netdata {num_memcached} ===")
 
@@ -239,8 +267,8 @@ def x_monitor_monitoring():
 
 def main():
     setup()
-    x_monitor_monitoring()
     netdata_monitoring()
+    x_monitor_monitoring()
 
 if __name__ == "__main__":
     main()
