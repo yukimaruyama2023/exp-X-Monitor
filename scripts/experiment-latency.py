@@ -10,9 +10,11 @@ import datetime
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
 ntd_mcd_in_allcores = False # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
-xdp_indirectcopy = False # default is True, but previous experiments are conducted as false (2025-11-12)
-mutilate_num_thread = 35 # default is True, but previous experiments are conducted as false (2025-11-12)
-#########################################################################################################
+xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
+prioritised = True # default is False. In true case, ntd_mcd_in_allcores set to be True
+##############################################################################################################
+# mutilate_num_thread = 35 # default is True, but previous experiments are conducted as false (2025-11-12) # NOTE: artifact configuration
+###############################################################################################################
 
 
 remote_host = "hamatora"
@@ -20,12 +22,14 @@ remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Mo
 remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
 conf_root = "./conf"
-remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/{mutilate_num_thread}thread/exp-latency/"
+# remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/{mutilate_num_thread}thread/exp-latency/" # NOTE: artifact configuration
+remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/exp-latency/"
 
 # num_memcacheds = [1, 5, 10]
 num_memcacheds = list(range(1, 13))
-x_monitor_intervals = [1, 0.1, 0.01]
+# x_monitor_intervals = [1, 0.1, 0.01]
 # x_monitor_intervals = [0.001, 0.0005, 0.0001]
+x_monitor_intervals = [0.001, 0.0002]
 # x_monitor_intervals = [0.0001]
 metrics = ["user", "kernel"]
 # metrics = ["kernel", "user"]
@@ -58,7 +62,8 @@ if xdp_indirectcopy:
 else:
     xdp_user_met_program = "xdp_user_directcopy.sh"
 
-data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/mutilate-{mutilate_num_thread}thread/{timestamp}"
+# data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/mutilate-{mutilate_num_thread}thread/{timestamp}"  # NOTE: artifact configuration
+data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/numa0/{timestamp}"
 
 
 def run_memcached(num_memcached):
@@ -149,7 +154,7 @@ def detach_xdp():
 
 def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-    stdin_input = f"{x_monitor_interval}\n"   # ★ ここだけ変更
+    stdin_input = f"{x_monitor_interval}\n"
 
     cmd = (
         f"cd {remote_monitoring_client} &&"
