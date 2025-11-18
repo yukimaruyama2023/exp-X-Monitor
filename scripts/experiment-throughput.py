@@ -25,8 +25,9 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
 all_runs_in_allcores = True # default is False; this is additonal configuration. 
-mcd_in_allcores_for_x_monitor = True # default is False; mcd for x_monitor runs in core 1-5, NOTE: you cannot configure mcd and netdata cpu affinity unlike latency experiment
+mcd_in_allcores_for_x_monitor = True # default is False; mcd for x_monitor runs in core 1-5, NOTE: you cannot configure mcd and netdata cpu affinity unlike latency experiment except for the case all_runs_in_allcores is True
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
+prioritized = True # default is False. This is enabled when all_runs_in_allcores is True
 cnts = 5
 #########################################################################################################
 
@@ -38,11 +39,15 @@ else:
     kernel_plugin_conf = f"{conf_root}/netdata/plugin/only-disable-go-plugin.conf"
 
 if all_runs_in_allcores:
-    data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/all_runs_in_allcores/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
+    data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/all_runs_in_allcores/prioritized-{prioritized}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
     mcd_cpu_aff_for_no_monitor = "all-core-execute.sh"
     mcd_cpu_aff_for_netdata = "all-core-execute.sh"
     mcd_cpu_aff_for_x_monitor = "all-core-execute.sh"
-    netdata_cpu_aff = "let-netdata-allcore.conf"
+    netdata_cpu_aff = (
+        "let-netdata-allcore-prioritized.conf"
+        if prioritized
+        else "let-netdata-allcore.conf"
+    )
 else:
     data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/ntd_mcd_allcores-{mcd_in_allcores_for_x_monitor}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
     if mcd_in_allcores_for_x_monitor:
@@ -101,6 +106,7 @@ def run_netdata(num_memcached, metric):
         subprocess.run(f"sudo cp {netdata_conf["user_plugin_conf"]} /etc/netdata/netdata.conf".split())
     else:
         subprocess.run(f"sudo cp {netdata_conf["kernel_plugin_conf"]} /etc/netdata/netdata.conf".split())
+    subprocess.run(f"sudo systemctl daemon-reload".split())
     subprocess.run(f"sudo systemctl restart netdata".split())
     print(f"=== [End] Running Netdata {num_memcached} ===")
 
