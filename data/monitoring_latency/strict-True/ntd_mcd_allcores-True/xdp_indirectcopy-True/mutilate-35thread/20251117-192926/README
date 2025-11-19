@@ -1,0 +1,6 @@
+This directory is test directory.
+only disk metrics as kernel metrics is collected.
+
+The result is collecting disk metrics crashes.
+It seems it's because lock wait for deciding disk.
+The code is my original code. So, revision is possible.

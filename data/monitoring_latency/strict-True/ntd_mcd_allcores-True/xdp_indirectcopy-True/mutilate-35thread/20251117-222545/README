@@ -1,0 +1,5 @@
+This directory is kernel crash test directory.
+only ipv4_snmp_tcp_udp_metrics is collected for kernel metrics.
+
+The result is  ... no problem
+ipv4_snmp_tcp_udp runs properly

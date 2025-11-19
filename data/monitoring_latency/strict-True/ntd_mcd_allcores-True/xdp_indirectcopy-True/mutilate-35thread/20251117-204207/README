@@ -1,0 +1,4 @@
+This directory is test directory.
+only memory metrics as kernel metrics is collected.
+
+The result is collecting memory metrics crashes.

@@ -1,0 +1,5 @@
+This directory is test directory.
+only cpu metrics as kerne metrics is collected.
+
+The result is collecting cpu metrics has no problem.
+Kernel doesn't crash.

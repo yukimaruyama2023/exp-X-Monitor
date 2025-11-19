@@ -1,0 +1,5 @@
+This directory is test directory.
+only ipv4_metrics is collected as kernel metrics. 
+
+The result is ... no problem
+ipv4_metrics is collected properly
