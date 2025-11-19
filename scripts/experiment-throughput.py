@@ -9,13 +9,13 @@ import datetime
 
 remote_host = "hamatora"
 # not latency but throughput
-remote_mutilate_script_throughput = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/exp-throughput/"
+remote_mutilate_script_throughput = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/0-46core/exp-throughput/"
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
 remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
 conf_root = "./conf"
 
-# num_memcacheds = [1, 5, 10]
+# num_memcacheds = [10]
 num_memcacheds = list(range(1, 13))
 x_monitor_intervals = [1, 0.1, 0.01]
 metrics = ["user", "kernel"]
@@ -120,7 +120,7 @@ def run_netdata_client_monitor(num_memcached, metric):
     cmd = (
         f"cd {remote_monitoring_client} &&"
         # output file is test.csv
-        f"numactl --cpunodebind=1 --membind=1 ./client_netdata test.csv"
+        f"taskset -c 47./client_netdata test.csv"
     )
     proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
                         stdin=subprocess.PIPE,
@@ -177,7 +177,7 @@ def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
     cmd = (
         f"cd {remote_monitoring_client} &&"
         # output file is test.csv
-        f"numactl --cpunodebind=1 --membind=1 ./client_x-monitor test.csv"
+        f"taskset -c 47 ./client_x-monitor test.csv"
     proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
                         stdin=subprocess.PIPE,
                         text=True)

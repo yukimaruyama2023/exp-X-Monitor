@@ -10,7 +10,7 @@ import datetime
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
 prioritized = False # default is False. In true case, ntd_mcd_in_allcores set to be True
-ntd_mcd_in_allcores = False # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
+ntd_mcd_in_allcores = True # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 ##############################################################################################################
 # mutilate_num_thread = 35 # default is True, but previous experiments are conducted as false (2025-11-12) # NOTE: artifact configuration
@@ -23,10 +23,11 @@ remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
 conf_root = "./conf"
 # remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/{mutilate_num_thread}thread/exp-latency/" # NOTE: artifact configuration
-remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/exp-latency/"
+# remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/exp-latency/"
+remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/mut0-46/exp-latency/"
 log_script_path = "./scripts/"
 
-num_memcacheds = [1, 5, 10]
+num_memcacheds = [10]
 # num_memcacheds = list(range(1, 13))
 # x_monitor_intervals = [1, 0.1, 0.01]
 # x_monitor_intervals = [0.001, 0.0005, 0.0001]
@@ -124,7 +125,7 @@ def run_netdata_client_monitor(num_memcached, metric):
         stdin_input = "1\n0\n"
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        f"numactl --cpunodebind=1 --membind=1 ./client_netdata {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
+        f"taskset -c 47 ./client_netdata {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
     )
     subprocess.run(f"ssh {remote_host} {cmd}".split(),
                    input=stdin_input,
@@ -178,7 +179,7 @@ def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
 
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        f"numactl --cpunodebind=1 --membind=1 ./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/"
+        f"taskset -c 47 ./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/"
         f"xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
     )
     subprocess.run(
