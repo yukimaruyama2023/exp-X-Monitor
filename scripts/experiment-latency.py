@@ -24,7 +24,7 @@ x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
 conf_root = "./conf"
 # remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/{mutilate_num_thread}thread/exp-latency/" # NOTE: artifact configuration
 # remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/exp-latency/"
-remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/mut0-46/exp-latency/"
+remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/0-46core/exp-latency/"
 log_script_path = "./scripts/"
 
 num_memcacheds = [10]
@@ -74,7 +74,7 @@ else:
     xdp_user_met_program = "xdp_user_directcopy.sh"
 
 # data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/prioritized-{prioritized}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/mutilate-{mutilate_num_thread}thread/{timestamp}"  # NOTE: artifact configuration
-data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/prioritized-{prioritized}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/numa0/{timestamp}"
+data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/prioritized-{prioritized}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/core0-46/{timestamp}"
 
 def log_to_slack(message):
     try:
@@ -266,7 +266,7 @@ def main():
     log_to_slack(f"============================ data_dir is {data_dir} =======================================")
     setup()
     netdata_monitoring()
-    x_monitor_monitoring()
+    # x_monitor_monitoring()
     log_to_slack("============================All experiment finished!!!!=======================================")
 
 if __name__ == "__main__":
