@@ -25,9 +25,9 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
 all_runs_in_allcores = True # default is False; this is additonal configuration. 
+prioritized = False # default is False. This is enabled when all_runs_in_allcores is True
 mcd_in_allcores_for_x_monitor = True # default is False; mcd for x_monitor runs in core 1-5, NOTE: you cannot configure mcd and netdata cpu affinity unlike latency experiment except for the case all_runs_in_allcores is True
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
-prioritized = True # default is False. This is enabled when all_runs_in_allcores is True
 cnts = 5
 #########################################################################################################
 
@@ -120,7 +120,7 @@ def run_netdata_client_monitor(num_memcached, metric):
     cmd = (
         f"cd {remote_monitoring_client} &&"
         # output file is test.csv
-        f"./client_netdata test.csv"
+        f"numactl --cpunodebind=1 --membind=1 ./client_netdata test.csv"
     )
     proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
                         stdin=subprocess.PIPE,
@@ -177,7 +177,7 @@ def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
     cmd = (
         f"cd {remote_monitoring_client} &&"
         # output file is test.csv
-        f"./client_x-monitor test.csv"
+        f"numactl --cpunodebind=1 --membind=1 ./client_x-monitor test.csv"
     proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
                         stdin=subprocess.PIPE,
                         text=True)

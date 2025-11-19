@@ -9,9 +9,9 @@ import datetime
 
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
-ntd_mcd_in_allcores = True # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
+prioritized = False # default is False. In true case, ntd_mcd_in_allcores set to be True
+ntd_mcd_in_allcores = False # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
-prioritized = True # default is False. In true case, ntd_mcd_in_allcores set to be True
 ##############################################################################################################
 # mutilate_num_thread = 35 # default is True, but previous experiments are conducted as false (2025-11-12) # NOTE: artifact configuration
 ###############################################################################################################
@@ -24,39 +24,20 @@ x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
 conf_root = "./conf"
 # remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/{mutilate_num_thread}thread/exp-latency/" # NOTE: artifact configuration
 remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/exp-latency/"
+log_script_path = "./scripts/"
 
-# num_memcacheds = [1, 5, 10]
-num_memcacheds = list(range(1, 13))
+num_memcacheds = [1, 5, 10]
+# num_memcacheds = list(range(1, 13))
 # x_monitor_intervals = [1, 0.1, 0.01]
 # x_monitor_intervals = [0.001, 0.0005, 0.0001]
-x_monitor_intervals = [0.001, 0.0002]
+x_monitor_intervals = [1, 0.001, 0.0002]
 # x_monitor_intervals = [0.0001]
-metrics = ["user", "kernel"]
-# metrics = ["kernel", "user"]
+# metrics = ["user", "kernel"]
+metrics = ["kernel", "user"]
 # metrics = ["kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
-# if prioritized == True:
-#     ntd_mcd_in_allcores = True # 強制的にここは True にする．そうしないと実験としておかしい．
-#
-# if strict_comparison:
-#     user_plugin_conf  = f"{conf_root}/netdata/plugin/only-go-plugin.conf"
-#     kernel_plugin_conf = f"{conf_root}/netdata/plugin/no-plugin.conf"
-# else:
-#     user_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
-#     kernel_plugin_conf = f"{conf_root}/netdata/plugin/only-disable-go-plugin.conf"
-#
-#
-# if ntd_mcd_in_allcores:
-#     mcd_cpu_aff = "all-core-execute.sh"
-#     netdata_cpu_aff = "let-netdata-allcore.conf"
-# else:
-#     mcd_cpu_aff = "pin-core1-5-execute.sh"
-#     netdata_cpu_aff = "pin-netdata-core0.conf"
-#
-# if prioritized == True:
-#     netdata_cpu_aff = "let-netdata-allcore-prioritized.conf"
 
 if strict_comparison:
     user_plugin_conf  = f"{conf_root}/netdata/plugin/only-go-plugin.conf"
@@ -93,6 +74,15 @@ else:
 
 # data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/prioritized-{prioritized}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/mutilate-{mutilate_num_thread}thread/{timestamp}"  # NOTE: artifact configuration
 data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/prioritized-{prioritized}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/numa0/{timestamp}"
+
+def log_to_slack(message):
+    try:
+        subprocess.run(
+            [f"{log_script_path}/log.sh", message],
+            check=True
+        )
+    except Exception as e:
+        print(f"[WARN] Failed to send message to slack {e}", file=sys.stderr)
 
 
 def run_memcached(num_memcached):
@@ -134,7 +124,7 @@ def run_netdata_client_monitor(num_memcached, metric):
         stdin_input = "1\n0\n"
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        f"./client_netdata {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
+        f"numactl --cpunodebind=1 --membind=1 ./client_netdata {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
     )
     subprocess.run(f"ssh {remote_host} {cmd}".split(),
                    input=stdin_input,
@@ -188,7 +178,7 @@ def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
 
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        f"./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/"
+        f"numactl --cpunodebind=1 --membind=1 ./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/"
         f"xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
     )
     subprocess.run(
@@ -238,9 +228,11 @@ def netdata_monitoring():
         print(f"############################################################################")
         print(f"##################### Netdata: Monitoring {metric} metrics ##########################")
         print(f"############################################################################")
+        log_to_slack(f"=====================Netdata: Monitoring {metric} metrics=======================")
         for num_memcached in num_memcacheds:
             print()
             print(f"############## Running {num_memcached} servers ##########################")
+            log_to_slack(f"Running {num_memcached} metrics")
             make_output_dir(num_memcached)
             run_netdata_server(num_memcached, metric)
             run_netdata_client(num_memcached, metric)
@@ -254,11 +246,14 @@ def x_monitor_monitoring():
         print(f"############################################################################")
         print(f"##################### X-Monitor: Monitoring {metric} metrics ##########################")
         print(f"############################################################################")
+        log_to_slack(f"============================X-Monitor: Monitoring {metric} metrics===================")
         for num_memcached in num_memcacheds:
             print(f"############## Running {num_memcached} servers ##########################")
+            log_to_slack(f"Runnign {num_memcached} servers")
             make_output_dir(num_memcached)
             for x_monitor_interval in x_monitor_intervals:
                 print(f"############## Interval {x_monitor_interval} ##########################")
+                log_to_slack(f"Interval {x_monitor_interval}")
                 run_x_monitor_server(num_memcached, metric)
                 run_x_monitor_client(num_memcached, metric, x_monitor_interval)
                 stop_server()
@@ -266,9 +261,12 @@ def x_monitor_monitoring():
                 time.sleep(5)
 
 def main():
+    log_to_slack("============================ Experiment Starts!!!! =======================================")
+    log_to_slack(f"============================ data_dir is {data_dir} =======================================")
     setup()
     netdata_monitoring()
     x_monitor_monitoring()
+    log_to_slack("============================All experiment finished!!!!=======================================")
 
 if __name__ == "__main__":
     main()
