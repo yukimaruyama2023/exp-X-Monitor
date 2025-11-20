@@ -9,7 +9,7 @@ import datetime
 
 remote_host = "hamatora"
 # not latency but throughput
-remote_mutilate_script_throughput = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/exp-throughput/"
+remote_mutilate_script_throughput = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/exp-throughput/"
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
 remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
@@ -17,19 +17,22 @@ conf_root = "./conf"
 
 # num_memcacheds = [1, 5, 10]
 num_memcacheds = list(range(1, 13))
-x_monitor_intervals = [1, 0.1, 0.01]
+intervals = [1, 0.5, 0.001]
 metrics = ["user", "kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
-all_runs_in_allcores = True # default is False; this is additonal configuration. 
 prioritized = False # default is False. This is enabled when all_runs_in_allcores is True
-mcd_in_allcores_for_x_monitor = True # default is False; mcd for x_monitor runs in core 1-5, NOTE: you cannot configure mcd and netdata cpu affinity unlike latency experiment except for the case all_runs_in_allcores is True
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 cnts = 5
 #########################################################################################################
+# fixed configuration
+all_runs_in_allcores = True # default is False; this is additonal configuration. 
+mcd_in_allcores_for_x_monitor = True # default is False; mcd for x_monitor runs in core 1-5, NOTE: you cannot configure mcd and netdata cpu affinity unlike latency experiment except for the case all_runs_in_allcores is True
+#########################################################################################################
+
 
 if strict_comparison:
     user_plugin_conf  = f"{conf_root}/netdata/plugin/only-go-plugin.conf"
@@ -111,12 +114,12 @@ def run_netdata(num_memcached, metric):
     print(f"=== [End] Running Netdata {num_memcached} ===")
 
 
-def run_netdata_client_monitor(num_memcached, metric):
+def run_netdata_client_monitor(num_memcached, metric, interval):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
     if metric == "user":
-        stdin_input = "1\n1\n"
+        stdin_input = f"{interval}\n1\n"
     else:
-        stdin_input = "1\n0\n"
+        stdin_input = f"{interval}\n0\n"
     cmd = (
         f"cd {remote_monitoring_client} &&"
         # output file is test.csv
@@ -151,33 +154,13 @@ def detach_xdp():
     script_path = os.path.join(x_monitor_root, "off.sh")
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
 
-# def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
-#     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-#     if x_monitor_interval == 1:
-#         stdin_input = "1\n"
-#     elif x_monitor_interval == 0.1:
-#         stdin_input = "0.1\n"
-#     else:
-#         stdin_input = "0.01\n"
-#     cmd = (
-#         f"cd {remote_monitoring_client} &&"
-#         # output file is test.csv
-#         f"./client_x-monitor test.csv"
-#     )
-#     proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
-#                         stdin=subprocess.PIPE,
-#                         text=True)
-#     proc.stdin.write(stdin_input)
-#     proc.stdin.close()
-#     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
-
-def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
+def run_x_monitor_client_monitor(num_memcached, metric, interval):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-    stdin_input = f"{x_monitor_interval}\n"
+    stdin_input = f"{interval}\n"
     cmd = (
         f"cd {remote_monitoring_client} &&"
         # output file is test.csv
-        f"numactl --cpunodebind=1 --membind=1 ./client_x-monitor test.csv"
+        f"numactl --cpunodebind=1 --membind=1 ./client_x-monitor test.csv")
     proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
                         stdin=subprocess.PIPE,
                         text=True)
@@ -185,28 +168,28 @@ def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
     proc.stdin.close()
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
-def run_mutilate_for_netdata(cnt, num_memcached, metric):
+def run_mutilate_for_netdata(cnt, num_memcached, metric, interval):
     print(f"=== [Start] Running mutilate {num_memcached} ===")
     # 1. execute path is remote_mutilate_script_throughput not ..latency
     # 2. specify output file
     cmd = (
-        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.txt"
+        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd-interval{interval}.txt"
     )
     subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
-    run_netdata_client_monitor(num_memcached, metric)
+    run_netdata_client_monitor(num_memcached, metric, interval)
     subprocess.run(f"ssh {remote_host} {cmd}".split())
 
     print(f"=== [End] Running mutilate {num_memcached} ===")
 
-def run_mutilate_for_x_monitor(cnt, num_memcached, metric, x_monitor_interval):
+def run_mutilate_for_x_monitor(cnt, num_memcached, metric, interval):
     print(f"=== [Start] Running mutilate {num_memcached} ===")
     # 1. execute path is remote_mutilate_script_throughput not ..latency
     # 2. specify output file
     cmd = (
-        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.txt"
+        f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{interval}.txt"
     )
     subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
-    run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval)
+    run_x_monitor_client_monitor(num_memcached, metric, interval)
     subprocess.run(f"ssh {remote_host} {cmd}".split())
 
     print(f"=== [End] Running mutilate {num_memcached} ===")
@@ -228,17 +211,17 @@ def run_netdata_server(num_memcached, metric):
     run_memcached_for_netdata(num_memcached)
     run_netdata(num_memcached, metric)
 
-def run_netdata_client(cnt, num_memcached, metric):
+def run_netdata_client(cnt, num_memcached, metric, interval):
     # monitoring client is called inside run_mutilate_for_netdata
-    run_mutilate_for_netdata(cnt, num_memcached, metric)
+    run_mutilate_for_netdata(cnt, num_memcached, metric, interval)
 
 def run_x_monitor_server(num_memcached, metric):
     run_memcached_for_x_monitor(num_memcached)
 
-def run_x_monitor_client(cnt, num_memcached, metric, x_monitor_interval):
+def run_x_monitor_client(cnt, num_memcached, metric, interval):
     load_xdp(metric, num_memcached)
     # monitoring client is called inside run_mutilate_for_x_monitor
-    run_mutilate_for_x_monitor(cnt, num_memcached, metric, x_monitor_interval)
+    run_mutilate_for_x_monitor(cnt, num_memcached, metric, interval)
     detach_xdp()
 
 def stop_server_for_netdata():
@@ -272,11 +255,13 @@ def netdata_monitoring(cnt):
             print()
             print(f"############## Running {num_memcached} servers ##########################")
             make_output_dir(cnt, num_memcached)
-            run_netdata_server(num_memcached, metric)
-            run_netdata_client(cnt, num_memcached, metric)
-            stop_server_for_netdata()
-            # needed to pkill memcached completely
-            time.sleep(5)
+            for interval in intervals:
+                print(f"############## Interval {interval} ##########################")
+                run_netdata_server(num_memcached, metric)
+                run_netdata_client(cnt, num_memcached, metric, interval)
+                stop_server_for_netdata()
+                # needed to pkill memcached completely
+                time.sleep(5)
 
 def x_monitor_monitoring(cnt):
     for metric in metrics:
@@ -287,10 +272,10 @@ def x_monitor_monitoring(cnt):
         for num_memcached in num_memcacheds:
             print(f"############## Running {num_memcached} servers ##########################")
             make_output_dir(cnt, num_memcached)
-            for x_monitor_interval in x_monitor_intervals:
-                print(f"############## Interval {x_monitor_interval} ##########################")
+            for interval in intervals:
+                print(f"############## Interval {interval} ##########################")
                 run_x_monitor_server(num_memcached, metric)
-                run_x_monitor_client(cnt, num_memcached, metric, x_monitor_interval)
+                run_x_monitor_client(cnt, num_memcached, metric, interval)
                 stop_server_for_x_monitor()
                 # needed to pkill memcached completely
                 time.sleep(5)
@@ -301,6 +286,7 @@ def no_monitoring(cnt):
     print(f"############################# No-Monitoring ################################")
     print(f"############################################################################")
     for num_memcached in num_memcacheds:
+        print(f"############## Running {num_memcached} servers ##########################")
         make_output_dir(cnt, num_memcached)
         run_memcached_for_no_monitor(num_memcached)
         run_mutilate_for_no_monitoring(cnt, num_memcached)
