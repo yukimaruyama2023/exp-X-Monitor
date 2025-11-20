@@ -10,9 +10,10 @@ import datetime
 ############################################ Configuratin ###############################################
 strict_comparison = True # default is False, which means almost all plugin runs
 prioritized = False # default is False. In true case, ntd_mcd_in_allcores set to be True
-ntd_mcd_in_allcores = False # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 ##############################################################################################################
+# fixed configuratin. 2025-11-20
+ntd_mcd_in_allcores = True # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5, now fixed to True
 # mutilate_num_thread = 35 # default is True, but previous experiments are conducted as false (2025-11-12) # NOTE: artifact configuration
 ###############################################################################################################
 
@@ -26,12 +27,12 @@ conf_root = "./conf"
 remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/exp-latency/"
 log_script_path = "./scripts/"
 
-num_memcacheds = [1, 5, 10]
-# num_memcacheds = list(range(1, 13))
-# x_monitor_intervals = [1, 0.1, 0.01]
-# x_monitor_intervals = [0.001, 0.0005, 0.0001]
-x_monitor_intervals = [1, 0.001, 0.0002]
-# x_monitor_intervals = [0.0001]
+# num_memcacheds = [1, 5, 10]
+num_memcacheds = list(range(1, 13))
+# intervals = [1, 0.1, 0.01]
+# intervals = [0.001, 0.0005, 0.0001]
+intervals = [1, 0.5, 0.001]
+# intervals = [0.0001]
 # metrics = ["user", "kernel"]
 metrics = ["kernel", "user"]
 # metrics = ["kernel"]
@@ -116,15 +117,16 @@ def run_mutilate(num_memcached):
     subprocess.Popen(f"ssh {remote_host} {remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-run.sh".split())
     print(f"=== [End] Running mutilate {num_memcached} ===")
 
-def run_netdata_client_monitor(num_memcached, metric):
+def run_netdata_client_monitor(num_memcached, metric, interval):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
     if metric == "user":
-        stdin_input = "1\n1\n"
+        stdin_input = f"{interval}\n1\n"
     else:
-        stdin_input = "1\n0\n"
+        stdin_input = f"{interval}\n0\n"
     cmd = (
         f"cd {remote_monitoring_client} &&"
-        f"numactl --cpunodebind=1 --membind=1 ./client_netdata {data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
+        f"numactl --cpunodebind=1 --membind=1 ./client_netdata {data_dir}/{str(num_memcached).zfill(3)}mcd/"
+        f"netdata-{metric}metrics-{num_memcached}mcd-interval{interval}.csv"
     )
     subprocess.run(f"ssh {remote_host} {cmd}".split(),
                    input=stdin_input,
@@ -153,33 +155,15 @@ def load_xdp(metric, num_memcached):
 def detach_xdp():
     script_path = os.path.join(x_monitor_root, "off.sh")
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
-#
-# def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
-#     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-#     if x_monitor_interval == 1:
-#         stdin_input = "1\n"
-#     elif x_monitor_interval == 0.1:
-#         stdin_input = "0.1\n"
-#     else:
-#         stdin_input = "0.01\n"
-#     cmd = (
-#         f"cd {remote_monitoring_client} &&"
-#         f"./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
-#     )
-#     subprocess.run(f"ssh {remote_host} {cmd}".split(),
-#                    input=stdin_input,
-#                    text=True
-#     )
-#     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
-def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
+def run_x_monitor_client_monitor(num_memcached, metric, interval):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-    stdin_input = f"{x_monitor_interval}\n"
+    stdin_input = f"{interval}\n"
 
     cmd = (
         f"cd {remote_monitoring_client} &&"
         f"numactl --cpunodebind=1 --membind=1 ./client_x-monitor {data_dir}/{str(num_memcached).zfill(3)}mcd/"
-        f"xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
+        f"xmonitor-{metric}metrics-{num_memcached}mcd-interval{interval}.csv"
     )
     subprocess.run(
         f"ssh {remote_host} {cmd}".split(),
@@ -192,17 +176,17 @@ def run_netdata_server(num_memcached, metric):
     run_memcached(num_memcached)
     run_netdata(num_memcached, metric)
 
-def run_netdata_client(num_memcached, metric):
+def run_netdata_client(num_memcached, metric, interval):
     run_mutilate(num_memcached)
-    run_netdata_client_monitor(num_memcached, metric)
+    run_netdata_client_monitor(num_memcached, metric, interval)
 
 def run_x_monitor_server(num_memcached, metric):
     run_memcached(num_memcached)
 
-def run_x_monitor_client(num_memcached, metric, x_monitor_interval):
+def run_x_monitor_client(num_memcached, metric, interval):
     load_xdp(metric, num_memcached)
     run_mutilate(num_memcached)
-    run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval)
+    run_x_monitor_client_monitor(num_memcached, metric, interval)
     detach_xdp()
 
 def stop_server():
@@ -234,11 +218,14 @@ def netdata_monitoring():
             print(f"############## Running {num_memcached} servers ##########################")
             log_to_slack(f"Running {num_memcached} metrics")
             make_output_dir(num_memcached)
-            run_netdata_server(num_memcached, metric)
-            run_netdata_client(num_memcached, metric)
-            stop_server()
-            # needed to pkill memcached completely
-            time.sleep(5)
+            for interval in intervals:
+                print(f"############## Interval {interval} ##########################")
+                log_to_slack(f"Interval {interval}")
+                run_netdata_server(num_memcached, metric)
+                run_netdata_client(num_memcached, metric, interval)
+                stop_server()
+                # needed to pkill memcached completely
+                time.sleep(5)
 
 def x_monitor_monitoring():
     for metric in metrics:
@@ -251,11 +238,11 @@ def x_monitor_monitoring():
             print(f"############## Running {num_memcached} servers ##########################")
             log_to_slack(f"Runnign {num_memcached} servers")
             make_output_dir(num_memcached)
-            for x_monitor_interval in x_monitor_intervals:
-                print(f"############## Interval {x_monitor_interval} ##########################")
-                log_to_slack(f"Interval {x_monitor_interval}")
+            for interval in intervals:
+                print(f"############## Interval {interval} ##########################")
+                log_to_slack(f"Interval {interval}")
                 run_x_monitor_server(num_memcached, metric)
-                run_x_monitor_client(num_memcached, metric, x_monitor_interval)
+                run_x_monitor_client(num_memcached, metric, interval)
                 stop_server()
                 # needed to pkill memcached completely
                 time.sleep(5)
