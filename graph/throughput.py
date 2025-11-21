@@ -6,64 +6,155 @@ import matplotlib
 from packaging import version
 
 
-fontsize = 25 # default is 25
-legend_fontsize = 17 # default is 17
-figsize = (10, 7)  # default is (10, 7)
+fontsize = 25  # default is 25
+legend_fontsize = 17  # default is 17
+figsize = (20, 7)  # default is (10, 7)
 
 THROUGHPUT_RE = re.compile(r"Total QPS\s*=\s*([\d.]+)")
 
+# ここを 7 本構成に拡張
 LABELS = [
     "No Monitoring",
     "Netdata (1000ms)",
     "X-Monitor (1000ms)",
-    "X-Monitor (100ms)",
-    "X-Monitor (10ms)",
+    "Netdata (500ms)",
+    "X-Monitor (500ms)",
+    "Netdata (1ms)",
+    "X-Monitor (1ms)",
 ]
 
-FILE_PATTERNS = {
-    "No Monitoring":        "no_monitoring-{num}mcd.txt",
-    "Netdata (1000ms)":     "netdata-{metric}metrics-{num}mcd.txt",
-    "X-Monitor (1000ms)":   "xmonitor-{metric}metrics-{num}mcd-interval1.txt",
-    "X-Monitor (100ms)":    "xmonitor-{metric}metrics-{num}mcd-interval0.1.txt",
-    "X-Monitor (10ms)":     "xmonitor-{metric}metrics-{num}mcd-interval0.01.txt",
+################# Label ↔ interval(sec) / tool 対応 ################
+# throughput のラベルはそのまま維持しつつ、
+# 内部的に「どのツールの、どの interval を読むか」をここで定義。
+LABEL_META = {
+    "No Monitoring": {
+        "tool": None,       # interval なし
+        "interval": None,
+    },
+    # Netdata: 1000 / 500 / 1ms
+    "Netdata (1000ms)": {
+        "tool": "netdata",
+        "interval": 1.0,    # 1000ms = 1.0s
+    },
+    "Netdata (500ms)": {
+        "tool": "netdata",
+        "interval": 0.5,    # 500ms = 0.5s
+    },
+    "Netdata (1ms)": {
+        "tool": "netdata",
+        "interval": 0.001,  # 1ms = 0.001s
+    },
+    # X-Monitor: 1000 / 500 / 1ms
+    "X-Monitor (1000ms)": {
+        "tool": "xmonitor",
+        "interval": 1.0,
+    },
+    "X-Monitor (500ms)": {
+        "tool": "xmonitor",
+        "interval": 0.5,
+    },
+    "X-Monitor (1ms)": {
+        "tool": "xmonitor",
+        "interval": 0.001,
+    },
 }
 
-
 ################# Design Configuration ############
+# すでに存在していたラベルの色はそのまま維持。
+# 新規ラベルにだけ新しい色を足している。
 
 COLORS = {
-    "No Monitoring":      "#6E738D",  # Neutral gray (base)
-    "Netdata (1000ms)":   "#F5A97F",  # Peach (warm)
-    "X-Monitor (1000ms)": "#5AB8A8",  # Clear teal（強めに差別化）
-    "X-Monitor (100ms)":  "#72A7E3",  # Distinct blue (青方向に大きくずらす)
-    "X-Monitor (10ms)":   "#C7A0E8",  # Lavender-purple（明確に他と離す）
+    "No Monitoring":        "#6E738D",  # Neutral gray (base)
+
+    # Netdata 系
+    "Netdata (1000ms)":     "#F5A97F",  # Peach (既存)
+    "Netdata (500ms)":      "#F28F79",  # 少し淡いトーンの追加色
+    "Netdata (1ms)":        "#E46876",  # 少し濃いトーンの追加色
+
+    # X-Monitor 系
+    "X-Monitor (1000ms)":   "#5AB8A8",  # Teal（既存）
+    "X-Monitor (500ms)":    "#72A7E3",  # 以前の 100ms の色を流用
+    "X-Monitor (1ms)":      "#C7A0E8",  # 以前の 10ms の色を流用
 }
 
 HATCHES = {
-    "No Monitoring":      "***",          # 無地
-    "Netdata (1000ms)":   "////",      # 密な斜線
-    "X-Monitor (1000ms)": "\\\\\\\\",  # 密な逆斜線
-    "X-Monitor (100ms)":  "xxxxx",    # 密なクロス
-    "X-Monitor (10ms)":   "....",    # 密なドット
-}
+    "No Monitoring":        "***",
+    "Netdata (1000ms)":     "////",
+    "Netdata (500ms)":      "----",   # Netdata 系は同じでもよいなら共通
+    "Netdata (1ms)":        "ooo",
 
-# HATCHES = {
-#     "No Monitoring": "",
-#     "Netdata (1000ms)": "",
-#     "X-Monitor (1000ms)": "",
-#     "X-Monitor (100ms)": "",
-#     "X-Monitor (10ms)": "",
-# }
+    "X-Monitor (1000ms)":   "\\\\\\\\",
+    "X-Monitor (500ms)":    "xxxx",
+    "X-Monitor (1ms)":      "....",
+}
 
 EDGE_KW = dict(edgecolor="black", linewidth=1.1)
 ####################################################
 
+
+def _find_interval_files_txt(log_dir: str, tool: str, metric: str, n: int):
+    """
+    CDF スクリプトの find_interval_files と同じノリで、
+    {tool}-{metric}metrics-{n}mcd-interval*.txt を全部拾って
+    [(interval_sec, path), ...] を interval 昇順で返す。
+    """
+    import glob
+
+    pattern = os.path.join(
+        log_dir, f"{tool}-{metric}metrics-{n}mcd-interval*.txt"
+    )
+    files = glob.glob(pattern)
+    found = []
+    for f in files:
+        m = re.search(r"interval([0-9.]+)\.txt$", f)
+        if not m:
+            continue
+        sec = float(m.group(1))
+        found.append((sec, f))
+    found.sort(key=lambda x: x[0])
+    return found
+
+
+def _select_file_for_interval(
+    log_dir: str, tool: str, metric: str, n: int, target_interval: float
+):
+    """
+    指定された tool/metric/mcd に対して、
+    interval*.txt の中から target_interval(s) に一致するファイルを 1 つ選ぶ。
+    見つからなければ None を返す。
+    """
+    candidates = _find_interval_files_txt(log_dir, tool, metric, n)
+    for sec, path in candidates:
+        if abs(sec - target_interval) < 1e-9:
+            return path
+    return None
+
+
 def collect_throughput(log_dir, metric, n):
+    """
+    1 run_dir (= .../RUN_ID/NNNmcd) から各ラベルの QPS を集める。
+    """
     data = {label: [] for label in LABELS}
     for label in LABELS:
-        path = os.path.join(log_dir, FILE_PATTERNS[label].format(metric=metric, num=str(n)))
-        if not os.path.exists(path):
-            continue
+        meta = LABEL_META[label]
+
+        # No Monitoring: interval なし、固定ファイル名
+        if meta["tool"] is None:
+            path = os.path.join(log_dir, f"no_monitoring-{n}mcd.txt")
+            if not os.path.exists(path):
+                continue
+        else:
+            tool = meta["tool"]
+            interval_sec = meta["interval"]
+
+            path = _select_file_for_interval(
+                log_dir, tool=tool, metric=metric, n=n, target_interval=interval_sec
+            )
+            if path is None or not os.path.exists(path):
+                # その interval のファイルが存在しない場合はスキップ
+                continue
+
+        # 実際にファイルから Total QPS を拾う
         with open(path) as f:
             for line in f:
                 m = THROUGHPUT_RE.search(line)
@@ -71,6 +162,7 @@ def collect_throughput(log_dir, metric, n):
                     data[label].append(float(m.group(1)))  # QPS
                     break
     return data
+
 
 def collect_stats_across_runs(base_dir, metric, nums, run_ids=None):
     if run_ids is None:
@@ -106,8 +198,8 @@ def _plot_one_metric(means, stds, nums, save_path):
     import matplotlib.pyplot as plt
 
     x = np.arange(len(nums))
-    width = 0.13
-    offsets = np.linspace(-width*2, width*2, len(LABELS))
+    width = 0.10  # 7 本になるので少し細く（元は 0.13）
+    offsets = np.linspace(-width*3, width*3, len(LABELS))
 
     plt.figure(figsize=figsize)
 
@@ -154,30 +246,7 @@ def _plot_one_metric(means, stds, nums, save_path):
     plt.ylim(0, 1050)
     plt.grid(axis="y", linestyle="--", alpha=0.4)
 
-    #### 凡例：グラフ内に入れるパターン
-    # from matplotlib.patches import Patch
-    # import matplotlib.patheffects as pe
-    # legend_handles = []
-    # for label in LABELS:
-    #     patch = Patch(
-    #         facecolor="white",
-    #         edgecolor=COLORS[label],     # ← ハッチ線色（色）
-    #         hatch=HATCHES[label],        # ← 密ハッチそのまま
-    #         linewidth=1.2,
-    #     )
-    #     patch.set_path_effects([
-    #         pe.Stroke(linewidth=1.4, foreground="black"),
-    #         pe.Normal()
-    #     ])
-    #     legend_handles.append(patch)
-    # plt.legend(
-    #     handles=legend_handles,
-    #     labels=LABELS,
-    #     fontsize=15.5,
-    #     handlelength=2.0,
-    # )
-
-    ### 凡例：グラフ外に出すパターン
+    # 凡例（グラフ外）
     import matplotlib.patches as mpatches
     import matplotlib.patheffects as pe
     legend_handles = []
@@ -196,18 +265,16 @@ def _plot_one_metric(means, stds, nums, save_path):
         LABELS,
         loc="upper center",
         bbox_to_anchor=(0.5, 1.23),   # ← グラフの上に配置
-        ncol=3,                       # 3列に並べる（2なら2列、5なら1行）
+        ncol=4,                       # 7 本なので 4 + 3 などに
         fontsize=legend_fontsize,
-        frameon=True                 # 枠線なしで上品に
-        # edgecolor="black"
+        frameon=True
     )
     plt.savefig(save_path, bbox_inches="tight", dpi=300)
-    
 
-    
+
 def plot_grouped_both(base_dir, nums=[1,5,10], run_ids=None):
+    # base_dir はタイムスタンプ直下（0〜9/001mcd ...）を想定（従来通り）
 
-    # ▼ 追加：保存ファイル名を base_dir 直下に用意
     kernel_out = os.path.join(base_dir, "throughput_kernel.png")
     user_out   = os.path.join(base_dir, "throughput_user.png")
 
