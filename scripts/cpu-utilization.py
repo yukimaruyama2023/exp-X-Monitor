@@ -8,15 +8,17 @@ import sys
 import datetime
 
 remote_host = "hamatora"
-remote_mutilate_script_latency = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/exp-latency/"
+# TODO: change mutialte mutilate directory
+remote_mutilate_script_latency = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/exp-cpuusage/"
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
 local_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
 conf_root = "./conf"
+log_script_path = "./scripts/"
 
 # num_memcacheds = [1, 5, 10]
 num_memcacheds = list(range(1, 13))
-x_monitor_intervals = [1, 0.1, 0.01]
+intervals = [1, 0.5, 0.001]
 # metrics = ["user", "kernel"]
 metrics = ["kernel", "user"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -47,6 +49,16 @@ netdata_conf = {
 data_dir = f"{local_data_root}/monitoring_cpu_utilization/enable_mutilate-{enable_mutilate}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
 
 
+
+def log_to_slack(message):
+    try:
+        subprocess.run(
+            [f"{log_script_path}/log.sh", message],
+            check=True
+        )
+    except Exception as e:
+        print(f"[WARN] Failed to send message to slack {e}", file=sys.stderr)
+
 def run_memcached(num_memcached):
     print(f"=== [Start] Running Memcached {num_memcached} instances, affinity is {mcd_cpu_aff} ===")
     subprocess.Popen(f"./conf/memcached/{mcd_cpu_aff} {num_memcached}".split())
@@ -75,7 +87,7 @@ def run_netdata_client_monitor(num_memcached, metric):
         stdin_input = "1\n0\n"
     cmd = (
         f"cd {remote_monitoring_client} && "
-        f"./client_netdata test.csv"
+        f"numactl --cpunodebind=1 --membind=1 ./client_netdata test.csv"
     )
     proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
                         stdin=subprocess.PIPE,
@@ -105,17 +117,13 @@ def detach_xdp():
     subprocess.run([script_path], cwd=x_monitor_root, check=True)
     time.sleep(5)
 
-# def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
-#     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-#     stdin_input = "1\n" if x_monitor_interval == 1 else ("0.1\n" if x_monitor_interval == 0.1 else "0.01\n")
-#     cmd = f"cd {remote_monitoring_client} && ./client_x-monitor test.csv"
-#     subprocess.run(["ssh", remote_host, cmd], input=stdin_input, text=True, check=True)
-#     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
-
-def run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval):
+def run_x_monitor_client_monitor(num_memcached, metric, interval):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
-    stdin_input = f"{x_monitor_interval}\n"
-    cmd = f"cd {remote_monitoring_client} && ./client_x-monitor test.csv"
+    stdin_input = f"{interval}\n"
+    cmd = ( 
+        f"cd {remote_monitoring_client} && "
+        f"numactl --cpunodebind=1 --membind=1 ./client_x-monitor test.csv"
+    )
     subprocess.run(
         ["ssh", remote_host, cmd],
         input=stdin_input,
@@ -141,10 +149,10 @@ def clear_trace_buffer():
     subprocess.run(["sudo", "sh", "-c", f": > {base}/trace"])
     subprocess.run(["sudo", "sh", "-c", f"echo 1 > {base}/tracing_on"])
 
-def calculate_x_monitor_cpu(num_memcached, metric, x_monitor_interval):
+def calculate_x_monitor_cpu(num_memcached, metric, interval):
     clear_trace_buffer()
     print(f"=== [Start] Calculate X-Monitor CPU Utilization, {num_memcached} instance, {metric} metrics === ")
-    out_path = f"{data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{x_monitor_interval}.csv"
+    out_path = f"{data_dir}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{interval}.csv"
 
     trace_pipe = "/sys/kernel/debug/tracing/trace_pipe"
     if not os.path.exists(trace_pipe):
@@ -206,10 +214,10 @@ def run_x_monitor_server(num_memcached, metric):
     run_memcached(num_memcached)
     load_xdp(metric, num_memcached)
 
-def run_x_monitor_client(num_memcached, metric, x_monitor_interval):
+def run_x_monitor_client(num_memcached, metric, interval):
     if enable_mutilate:
         run_mutilate(num_memcached)
-    run_x_monitor_client_monitor(num_memcached, metric, x_monitor_interval)
+    run_x_monitor_client_monitor(num_memcached, metric, interval)
 
 def stop_for_netdata():
     stop_monitoring_client_for_netdata()
@@ -243,15 +251,20 @@ def netdata_monitoring():
         print(f"############################################################################")
         print(f"##################### Netdata: Monitoring {metric} metrics ##########################")
         print(f"############################################################################")
+        log_to_slack(f"============================ Netdcata: Monitoring {metric} metrics ===================")
         for num_memcached in num_memcacheds:
             print()
             print(f"############## Running {num_memcached} servers ##########################")
+            log_to_slack(f"------------------Runnign {num_memcached} servers----------------")
             make_output_dir(num_memcached)
-            run_netdata_server(num_memcached, metric)
-            run_netdata_client(num_memcached, metric)
-            calculate_netdata_cpu(num_memcached, metric)
-            stop_for_netdata()
-            time.sleep(5)
+            for interval in intervals:
+                print(f"############## Interval {interval} ##########################")
+                log_to_slack(f"Interval {interval}")
+                run_netdata_server(num_memcached, metric)
+                run_netdata_client(num_memcached, metric)
+                calculate_netdata_cpu(num_memcached, metric)
+                stop_for_netdata()
+                time.sleep(5)
 
 def x_monitor_monitoring():
     for metric in metrics:
@@ -259,21 +272,28 @@ def x_monitor_monitoring():
         print(f"############################################################################")
         print(f"##################### X-Monitor: Monitoring {metric} metrics ##########################")
         print(f"############################################################################")
+        log_to_slack(f"============================ X-Monitor: Monitoring {metric} metrics ===================")
         for num_memcached in num_memcacheds:
+            print()
             print(f"############## Running {num_memcached} servers ##########################")
+            log_to_slack(f"------------------Runnign {num_memcached} servers----------------")
             make_output_dir(num_memcached)
-            for x_monitor_interval in x_monitor_intervals:
-                print(f"############## Interval {x_monitor_interval} ##########################")
+            for interval in intervals:
+                print(f"############## Interval {interval} ##########################")
+                log_to_slack(f"Interval {interval}")
                 run_x_monitor_server(num_memcached, metric)
-                calculate_x_monitor_cpu(num_memcached, metric, x_monitor_interval)
-                run_x_monitor_client(num_memcached, metric, x_monitor_interval)
+                calculate_x_monitor_cpu(num_memcached, metric, interval)
+                run_x_monitor_client(num_memcached, metric, interval)
                 stop_for_x_monitor()
                 time.sleep(5)
 
 def main():
+    log_to_slack("============================ Experiment Starts!!!! =======================================")
+    log_to_slack(f"============================ data_dir is {data_dir} =======================================")
     setup()
     netdata_monitoring()
     x_monitor_monitoring()
+    log_to_slack("============================All experiment finished!!!!=======================================")
 
 if __name__ == "__main__":
     main()

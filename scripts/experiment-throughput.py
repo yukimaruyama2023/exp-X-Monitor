@@ -14,6 +14,7 @@ remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Mo
 remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
 conf_root = "./conf"
+log_script_path = "./scripts/"
 
 # num_memcacheds = [1, 5, 10]
 num_memcacheds = list(range(1, 13))
@@ -73,6 +74,18 @@ netdata_conf = {
     "user_plugin_conf": user_plugin_conf,
     "kernel_plugin_conf": kernel_plugin_conf,
 }
+
+
+
+
+def log_to_slack(message):
+    try:
+        subprocess.run(
+            [f"{log_script_path}/log.sh", message],
+            check=True
+        )
+    except Exception as e:
+        print(f"[WARN] Failed to send message to slack {e}", file=sys.stderr)
 
 def run_memcached_for_x_monitor(num_memcached):
     print(f"=== [Start] Running Memcached {num_memcached} instances, affinity is {mcd_cpu_aff_for_x_monitor} ===")
@@ -251,12 +264,15 @@ def netdata_monitoring(cnt):
         print(f"############################################################################")
         print(f"##################### Netdata: Monitoring {metric} metrics ##########################")
         print(f"############################################################################")
+        log_to_slack(f"============================ Netdcata: Monitoring {metric} metrics ===================")
         for num_memcached in num_memcacheds:
+            log_to_slack(f"------- Running {num_memcached} servers ----------")
             print()
             print(f"############## Running {num_memcached} servers ##########################")
             make_output_dir(cnt, num_memcached)
             for interval in intervals:
                 print(f"############## Interval {interval} ##########################")
+                log_to_slack(f"Interval {interval}")
                 run_netdata_server(num_memcached, metric)
                 run_netdata_client(cnt, num_memcached, metric, interval)
                 stop_server_for_netdata()
@@ -269,11 +285,14 @@ def x_monitor_monitoring(cnt):
         print(f"#######################################################################################")
         print(f"##################### X-Monitor: Monitoring {metric} metrics ##########################")
         print(f"#######################################################################################")
+        log_to_slack(f"============================ X-Monitor: Monitoring {metric} metrics ===================")
         for num_memcached in num_memcacheds:
+            log_to_slack(f"------- Running {num_memcached} metrics ----------")
             print(f"############## Running {num_memcached} servers ##########################")
             make_output_dir(cnt, num_memcached)
             for interval in intervals:
                 print(f"############## Interval {interval} ##########################")
+                log_to_slack(f"Interval {interval}")
                 run_x_monitor_server(num_memcached, metric)
                 run_x_monitor_client(cnt, num_memcached, metric, interval)
                 stop_server_for_x_monitor()
@@ -285,7 +304,9 @@ def no_monitoring(cnt):
     print(f"############################################################################")
     print(f"############################# No-Monitoring ################################")
     print(f"############################################################################")
+    log_to_slack(f"============================ No-Monitoring ===================")
     for num_memcached in num_memcacheds:
+        log_to_slack(f"------- Running {num_memcached} servers ----------")
         print(f"############## Running {num_memcached} servers ##########################")
         make_output_dir(cnt, num_memcached)
         run_memcached_for_no_monitor(num_memcached)
@@ -294,6 +315,8 @@ def no_monitoring(cnt):
         time.sleep(5)
 
 def main():
+    log_to_slack("============================ Experiment Starts!!!! =======================================")
+    log_to_slack(f"============================ data_dir is {data_dir} =======================================")
     setup()
     for cnt in range(cnts):
         print(f"############################################################################")
@@ -301,9 +324,13 @@ def main():
         print(f"############################# Count: {cnt} #################################")
         print(f"############################################################################")
         print(f"############################################################################")
+        log_to_slack(f"####################### Count {cnt} ######################")
+
         no_monitoring(cnt)
         netdata_monitoring(cnt)
         x_monitor_monitoring(cnt)
+
+    log_to_slack("============================All experiment finished!!!!=======================================")
 
 if __name__ == "__main__":
     main()

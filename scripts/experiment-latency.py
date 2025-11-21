@@ -8,7 +8,7 @@ import sys
 import datetime
 
 ############################################ Configuratin ###############################################
-strict_comparison = True # default is False, which means almost all plugin runs
+strict_comparison = True # default is False, which means almost all plugin runs. now true 2025-11-20
 prioritized = False # default is False. In true case, ntd_mcd_in_allcores set to be True
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 ##############################################################################################################
@@ -212,11 +212,11 @@ def netdata_monitoring():
         print(f"############################################################################")
         print(f"##################### Netdata: Monitoring {metric} metrics ##########################")
         print(f"############################################################################")
-        log_to_slack(f"=====================Netdata: Monitoring {metric} metrics=======================")
+        log_to_slack(f"===================== Netdata: Monitoring {metric} metrics =======================")
         for num_memcached in num_memcacheds:
             print()
             print(f"############## Running {num_memcached} servers ##########################")
-            log_to_slack(f"Running {num_memcached} metrics")
+            log_to_slack(f"-------------------Running {num_memcached} metrics--------------")
             make_output_dir(num_memcached)
             for interval in intervals:
                 print(f"############## Interval {interval} ##########################")
@@ -233,10 +233,10 @@ def x_monitor_monitoring():
         print(f"############################################################################")
         print(f"##################### X-Monitor: Monitoring {metric} metrics ##########################")
         print(f"############################################################################")
-        log_to_slack(f"============================X-Monitor: Monitoring {metric} metrics===================")
+        log_to_slack(f"============================ X-Monitor: Monitoring {metric} metrics ===================")
         for num_memcached in num_memcacheds:
             print(f"############## Running {num_memcached} servers ##########################")
-            log_to_slack(f"Runnign {num_memcached} servers")
+            log_to_slack(f"------------------Runnign {num_memcached} servers----------------")
             make_output_dir(num_memcached)
             for interval in intervals:
                 print(f"############## Interval {interval} ##########################")
