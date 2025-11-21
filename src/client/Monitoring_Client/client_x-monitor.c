@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   scanf("%f", &INTERVAL);
   NUMMONITORING = NUMMONITORING_BASELINE / INTERVAL;
 
-  if (INTERVAL == 1.0f) {
+  if (INTERVAL >= 0.5f) {
     NUMMONITORING *= 2;
   }
 
@@ -81,56 +81,68 @@ int main(int argc, char **argv) {
 
   // declare variables relavant to time
   struct timespec send_time, recv_time;
-  struct timespec interval;
-  if (INTERVAL == 1) {
-    interval.tv_sec = INTERVAL;
-    interval.tv_nsec = 0;
-  } else {
-    interval.tv_sec = 0;
-    interval.tv_nsec = INTERVAL * 1000000000;
-  }
   struct tm *time;
 
   // start monitoring for NUMMONITORING times
   for (int i = 0; i < NUMMONITORING; i++) {
     memset(metrics, 0, BUFFER_SIZE);
-    nanosleep(&interval, NULL);
+    // nanosleep(&interval, NULL);
     if (send(send_sd, metrics, BUFFER_SIZE, 0) < 0) {
       perror("send");
       exit(1);
     }
 
-    timespec_get(&send_time, TIME_UTC);
+    // timespec_get(&send_time, TIME_UTC);
+    clock_gettime(CLOCK_MONOTONIC, &send_time);
 
     if (recv(recv_sd, metrics, BUFFER_SIZE, 0) < 0) {
       perror("recv");
       exit(1);
     }
 
-    timespec_get(&recv_time, TIME_UTC);
+    // timespec_get(&recv_time, TIME_UTC);
+    clock_gettime(CLOCK_MONOTONIC, &recv_time);
 
-    time = localtime(&recv_time.tv_sec);
+    // time = localtime(&recv_time.tv_sec);
+    struct timespec wall_time;
+    clock_gettime(CLOCK_REALTIME, &wall_time);
+    time = localtime(&wall_time.tv_sec);
+
     long sec_diff = recv_time.tv_sec - send_time.tv_sec;
     long nsec_diff = recv_time.tv_nsec - send_time.tv_nsec;
 
-    // ナノ秒部分がマイナスになる場合の調整
     if (nsec_diff < 0) {
       sec_diff -= 1;
-      nsec_diff += 1000000000L; // 1秒をナノ秒に変換
+      nsec_diff += 1000000000L; // 1s to nano second
     }
-    double elapsed_time = sec_diff * 1000000.0 + nsec_diff / 1000.0;
+    // double elapsed_time = sec_diff * 1000000.0 + nsec_diff / 1000.0;
 
-    // 結果をファイルに出力（小数点以下2桁まで表示）
+    long elapsed_us = (recv_time.tv_sec - send_time.tv_sec) * 1000000L +
+                        (recv_time.tv_nsec - send_time.tv_nsec) / 1000L;
+
+    double elapsed_time = (double)elapsed_us;
+
+    long target_us = (long)(INTERVAL * 1000000L);
+    long remaining_us = target_us - elapsed_us;
+
+    if (remaining_us > 0) {
+        struct timespec req;
+        req.tv_sec  = remaining_us / 1000000L;
+        req.tv_nsec = (remaining_us % 1000000L) * 1000L;
+
+        nanosleep(&req, NULL);
+    }
+
     fprintf(fp, "%d/%02d/%02d-%02d:%02d:%02d.%06ld,", time->tm_year + 1900,
             time->tm_mon + 1, time->tm_mday, time->tm_hour, time->tm_min,
-            time->tm_sec, recv_time.tv_nsec / 1000);
+            time->tm_sec, wall_time.tv_nsec / 1000);
 
     fprintf(fp, "%ld.%09ld,%.2f\n", send_time.tv_sec, send_time.tv_nsec,
             elapsed_time);
 
-    // if (i % (int)(10 / INTERVAL) == 0) {
-    //   printf("message[%d] is sent\n", i);
-    // }
+    if (i % (int)(10 / INTERVAL) == 0) {
+      printf("message[%d] is sent\n", i);
+    }
   }
 
   close(send_sd);
