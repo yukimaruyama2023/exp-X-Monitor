@@ -17,7 +17,9 @@ conf_root = "./conf"
 log_script_path = "./scripts/"
 
 # num_memcacheds = [1, 5, 10]
-num_memcacheds = list(range(1, 13))
+# num_memcacheds = list(range(1, 13))
+# num_memcacheds = list(range(1, 12))
+num_memcacheds = [12]
 intervals = [1, 0.5, 0.001]
 metrics = ["user", "kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -27,7 +29,7 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 strict_comparison = True # default is False, which means almost all plugin runs
 prioritized = False # default is False. This is enabled when all_runs_in_allcores is True
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
-cnts = 5
+cnts = 3
 #########################################################################################################
 # fixed configuration
 all_runs_in_allcores = True # default is False; this is additonal configuration. 

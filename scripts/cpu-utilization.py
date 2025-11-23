@@ -17,7 +17,8 @@ conf_root = "./conf"
 log_script_path = "./scripts/"
 
 # num_memcacheds = [1, 5, 10]
-num_memcacheds = list(range(1, 13))
+# num_memcacheds = list(range(1, 13))
+num_memcacheds = [12]
 intervals = [1, 0.5, 0.001]
 # metrics = ["user", "kernel"]
 metrics = ["kernel", "user"]
@@ -171,10 +172,28 @@ def calculate_x_monitor_cpu(num_memcached, metric, interval):
 def stop_mutilate():
     subprocess.run(["ssh", remote_host, "pkill", "-f", "mutilate"])
 
+# def run_mutilate(num_memcached):
+#     print(f"=== [Start] Running mutilate {num_memcached} ===")
+#     subprocess.run(f"ssh {remote_host} {remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
+#     subprocess.Popen(f"ssh {remote_host} {remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-run.sh".split())
+#     print(f"=== [End] Running mutilate {num_memcached} ===")
+
 def run_mutilate(num_memcached):
     print(f"=== [Start] Running mutilate {num_memcached} ===")
-    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
-    subprocess.Popen(f"ssh {remote_host} {remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-run.sh".split())
+    load_script = f"{remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-load.sh"
+    run_script  = f"{remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-run.sh"
+    # -------- load (blocking) --------
+    # ssh の先で ulimit → script を実行
+    subprocess.run([
+        "ssh", remote_host,
+        f'bash -c "ulimit -n 100000; {load_script}"'
+    ])
+    # -------- run (non-blocking) --------
+    # 同様に ulimit を設定してから run.sh を実行
+    subprocess.Popen([
+        "ssh", remote_host,
+        f'bash -c "ulimit -n 100000; {run_script}"'
+    ])
     print(f"=== [End] Running mutilate {num_memcached} ===")
 
 def stop_monitoring_client_for_netdata():

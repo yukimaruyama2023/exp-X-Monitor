@@ -28,7 +28,8 @@ remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/m
 log_script_path = "./scripts/"
 
 # num_memcacheds = [1, 5, 10]
-num_memcacheds = list(range(1, 13))
+num_memcacheds = [12]
+# num_memcacheds = list(range(1, 13))
 # intervals = [1, 0.1, 0.01]
 # intervals = [0.001, 0.0005, 0.0001]
 intervals = [1, 0.5, 0.001]
