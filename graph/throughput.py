@@ -285,3 +285,21 @@ def plot_grouped_both(base_dir, nums=[1,5,10], run_ids=None):
     # 2枚目: user
     means_u, stds_u = collect_stats_across_runs(base_dir, "user", nums, run_ids)
     _plot_one_metric(means_u, stds_u, nums, save_path=user_out)
+
+
+def print_throughput_means(base_dir, nums, run_ids=None):
+    # kernel
+    means_k, stds_k = collect_stats_across_runs(base_dir, "kernel", nums, run_ids)
+    print("===== Kernel metrics: Throughput Means (K ops/sec) =====")
+    for label in LABELS:
+        print(f"\n[ {label} ]")
+        for n, v in zip(nums, means_k[label]):
+            print(f"  {n} mcd : {v:.3f}")
+
+    # user
+    means_u, stds_u = collect_stats_across_runs(base_dir, "user", nums, run_ids)
+    print("\n===== User metrics: Throughput Means (K ops/sec) =====")
+    for label in LABELS:
+        print(f"\n[ {label} ]")
+        for n, v in zip(nums, means_u[label]):
+            print(f"  {n} mcd : {v:.3f} ops/sec")
