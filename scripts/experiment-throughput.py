@@ -191,21 +191,9 @@ def run_mutilate_for_netdata(cnt, num_memcached, metric, interval):
     cmd = (
         f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd-interval{interval}.txt"
     )
-    # subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
-    print("************************* before ulimit and load ****************************")
-    subprocess.run([
-        "ssh", remote_host,
-        f'bash -c "ulimit -n 100000; {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh"'
-    ])
-    print("************************* after ulimit and load ****************************")
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
     run_netdata_client_monitor(num_memcached, metric, interval)
-    # subprocess.run(f"ssh {remote_host} {cmd}".split())
-    print("************************* before ulimit and run ****************************")
-    subprocess.run([
-        "ssh", remote_host,
-        f'bash -c "ulimit -n 100000; {cmd}"'
-    ])
-    print("************************* after ulimit and run ****************************")
+    subprocess.run(f"ssh {remote_host} {cmd}".split())
     print(f"=== [End] Running mutilate {num_memcached} ===")
 
 def run_mutilate_for_x_monitor(cnt, num_memcached, metric, interval):
@@ -215,21 +203,9 @@ def run_mutilate_for_x_monitor(cnt, num_memcached, metric, interval):
     cmd = (
         f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_memcached).zfill(3)}mcd/xmonitor-{metric}metrics-{num_memcached}mcd-interval{interval}.txt"
     )
-    # subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
-    print("************************* before ulimit and load ****************************")
-    subprocess.run([
-        "ssh", remote_host,
-        f'bash -c "ulimit -n 100000; {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh"'
-    ])
-    print("************************* after ulimit and load ****************************")
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
     run_x_monitor_client_monitor(num_memcached, metric, interval)
-    # subprocess.run(f"ssh {remote_host} {cmd}".split())
-    print("************************* before ulimit and run ****************************")
-    subprocess.run([
-        "ssh", remote_host,
-        f'bash -c "ulimit -n 100000; {cmd}"'
-    ])
-    print("************************* after ulimit and run ****************************")
+    subprocess.run(f"ssh {remote_host} {cmd}".split())
     print(f"=== [End] Running mutilate {num_memcached} ===")
 
 
@@ -240,20 +216,8 @@ def run_mutilate_for_no_monitoring(cnt, num_memcached):
     cmd = (
         f"{remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_memcached).zfill(3)}mcd/no_monitoring-{num_memcached}mcd.txt"
     )
-    # subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
-    # subprocess.run(f"ssh {remote_host} {cmd}".split())
-    print("************************* before ulimit and load ****************************")
-    subprocess.run([
-        "ssh", remote_host,
-        f'bash -c "ulimit -n 100000; {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh"'
-    ])
-    print("************************* after ulimit and load ****************************")
-    print("************************* before ulimit and run ****************************")
-    subprocess.run([
-        "ssh", remote_host,
-        f'bash -c "ulimit -n 100000; {cmd}"'
-    ])
-    print("************************* after ulimit and run ****************************")
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_memcached).zfill(3)}mcd-load.sh".split())
+    subprocess.run(f"ssh {remote_host} {cmd}".split())
 
     print(f"=== [End] Running mutilate {num_memcached} ===")
 
