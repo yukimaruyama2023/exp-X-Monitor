@@ -9,6 +9,7 @@ import datetime
 
 remote_host = "hamatora"
 # TODO: change mutialte mutilate directory
+# TODO: mutilate は消しちゃって良い．
 remote_mutilate_script_latency = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/exp-cpuusage/"
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
 local_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
@@ -184,6 +185,7 @@ def run_mutilate(num_memcached):
     run_script  = f"{remote_mutilate_script_latency}/{str(num_memcached).zfill(3)}mcd-run.sh"
     # -------- load (blocking) --------
     # ssh の先で ulimit → script を実行
+    # TODO:  ここいらないので直す．なんなら mutilate 自体消す．
     subprocess.run([
         "ssh", remote_host,
         f'bash -c "ulimit -n 100000; {load_script}"'
