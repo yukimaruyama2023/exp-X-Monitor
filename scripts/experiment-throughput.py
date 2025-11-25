@@ -13,6 +13,7 @@ remote_mutilate_script_throughput = "/home/maruyama/workspace/exp-X-Monitor/conf
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
 remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
+stats_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/stats-command"
 conf_root = "./conf"
 log_script_path = "./scripts/"
 
@@ -29,6 +30,7 @@ timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 strict_comparison = True # default is False, which means almost all plugin runs
 prioritized = False # default is False. This is enabled when all_runs_in_allcores is True
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
+all_runs_in_0_4cores = True #  (2025-11-25)
 cnts = 3
 #########################################################################################################
 # fixed configuration
@@ -44,27 +46,39 @@ else:
     user_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
     kernel_plugin_conf = f"{conf_root}/netdata/plugin/only-disable-go-plugin.conf"
 
-if all_runs_in_allcores:
-    data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/all_runs_in_allcores/prioritized-{prioritized}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
-    mcd_cpu_aff_for_no_monitor = "all-core-execute.sh"
-    mcd_cpu_aff_for_netdata = "all-core-execute.sh"
-    mcd_cpu_aff_for_x_monitor = "all-core-execute.sh"
+if all_runs_in_0_4cores:
+    data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/all_runs_in_0_4cores/prioritized-{prioritized}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
+    mcd_cpu_aff_for_no_monitor = "pin-core0-4-execute.sh"
+    mcd_cpu_aff_for_netdata = "pin-core0-4-execute.sh"
+    mcd_cpu_aff_for_x_monitor = "pin-core0-4-execute.sh"
     netdata_cpu_aff = (
-        "let-netdata-allcore-prioritized.conf"
+        "pin-netdata-core0-4.conf"
         if prioritized
-        else "let-netdata-allcore.conf"
+        else "pin-netdata-core0-4-prioritized.conf"
     )
-else:
-    data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/ntd_mcd_allcores-{mcd_in_allcores_for_x_monitor}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
-    if mcd_in_allcores_for_x_monitor:
-        mcd_cpu_aff_for_x_monitor = "all-core-execute.sh"
-        mcd_cpu_aff_for_no_monitor = "all-core-execute.sh"
-    else:
-        mcd_cpu_aff_for_x_monitor = "pin-core1-5-execute.sh"
-        mcd_cpu_aff_for_no_monitor = "pin-core1-5-execute.sh"
 
-    netdata_cpu_aff = "pin-netdata-core0.conf"
-    mcd_cpu_aff_for_netdata = "pin-core1-5-execute.sh"
+else:
+    if all_runs_in_allcores:
+        data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/all_runs_in_allcores/prioritized-{prioritized}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
+        mcd_cpu_aff_for_no_monitor = "all-core-execute.sh"
+        mcd_cpu_aff_for_netdata = "all-core-execute.sh"
+        mcd_cpu_aff_for_x_monitor = "all-core-execute.sh"
+        netdata_cpu_aff = (
+            "let-netdata-allcore-prioritized.conf"
+            if prioritized
+            else "let-netdata-allcore.conf"
+        )
+    else:
+        data_dir = f"{remote_data_root}/monitoring_throughput/strict-{strict_comparison}/ntd_mcd_allcores-{mcd_in_allcores_for_x_monitor}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
+        if mcd_in_allcores_for_x_monitor:
+            mcd_cpu_aff_for_x_monitor = "all-core-execute.sh"
+            mcd_cpu_aff_for_no_monitor = "all-core-execute.sh"
+        else:
+            mcd_cpu_aff_for_x_monitor = "pin-core0-4-execute.sh"
+            mcd_cpu_aff_for_no_monitor = "pin-core0-4-execute.sh"
+
+        netdata_cpu_aff = "pin-netdata-core0.conf"
+        mcd_cpu_aff_for_netdata = "pin-core1-5-execute.sh"
 
 if xdp_indirectcopy:
     xdp_user_met_program = "xdp_user_indirectcopy.sh"
@@ -76,8 +90,6 @@ netdata_conf = {
     "user_plugin_conf": user_plugin_conf,
     "kernel_plugin_conf": kernel_plugin_conf,
 }
-
-
 
 
 def log_to_slack(message):
@@ -146,6 +158,7 @@ def run_netdata_client_monitor(num_memcached, metric, interval):
     proc.stdin.write(stdin_input)
     proc.stdin.close()
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
+
 
 def load_xdp(metric, num_memcached):
     if metric == "user":
@@ -221,6 +234,20 @@ def run_mutilate_for_no_monitoring(cnt, num_memcached):
 
     print(f"=== [End] Running mutilate {num_memcached} ===")
 
+def run_stats(interval):
+    print(f"=== [Start] Running memcached_stats_loop interval={interval} on core 5 ===")
+    cmd = [
+        "taskset", "-c", "5",
+        f"{stats_root}/memcached_stats_loop",
+        str(interval),
+    ]
+    subprocess.Popen(cmd)
+
+def stop_stats():
+    print("=== [Stop] memcached_stats_loop ===")
+    subprocess.run(["pkill", "-f", "memcached_stats_loop"])
+
+###############################
 
 def run_netdata_server(num_memcached, metric):
     run_memcached_for_netdata(num_memcached)
@@ -241,11 +268,17 @@ def run_x_monitor_client(cnt, num_memcached, metric, interval):
 
 def stop_server_for_netdata():
     stop_monitoring_client_for_netdata()
+    if (all_runs_in_0_4cores):
+        # this might not be needed. stop_memcached() have already killed memcached_stats
+        stop_stats()
     stop_memcached()
+
 
 def stop_server_for_x_monitor():
     stop_monitoring_client_for_x_monitor()
     stop_memcached()
+
+#################################
 
 def setup():
     print(f"=== [Start] Setup: cpu-affinity of netdata ===")
@@ -276,6 +309,8 @@ def netdata_monitoring(cnt):
                 print(f"############## Interval {interval} ##########################")
                 log_to_slack(f"Interval {interval}")
                 run_netdata_server(num_memcached, metric)
+                if (all_runs_in_0_4cores):
+                    run_stats(interval)
                 run_netdata_client(cnt, num_memcached, metric, interval)
                 stop_server_for_netdata()
                 # needed to pkill memcached completely
