@@ -7,4 +7,4 @@ numactl --cpunodebind=0 --membind=0 /home/maruyama/workspace/exp-X-Monitor/src/c
   -s 10.10.10.1:11214 \
   -s 10.10.10.1:11215 \
   -s 10.10.10.1:11216 \
-  -T 24 -c 1 -q 0 -u 0 -i exponential:1 -t 40 --noload --depth 1 --records 50000000
+  -T 24 -c 1 -q 0 -u 0 -i exponential:1 -t 40 --noload --depth 1 --records 1000000
