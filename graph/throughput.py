@@ -243,7 +243,8 @@ def _plot_one_metric(means, stds, nums, save_path):
     plt.xlabel("Number of instances", fontsize=fontsize)
     plt.tick_params(axis='y', labelsize=fontsize)
     plt.ylabel("Throughput (K ops/sec)", fontsize=fontsize)
-    plt.ylim(0, 1050)
+    # plt.ylim(0, 1050)
+    plt.ylim(0, 1000)
     plt.grid(axis="y", linestyle="--", alpha=0.4)
 
     # 凡例（グラフ外）
