@@ -100,12 +100,21 @@ static void add_interval(struct timespec *ts, double interval) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
-    fprintf(stderr, "Usage: %s <interval_sec>\n", argv[0]);
+  if (argc != 3) {
+    fprintf(stderr, "Usage: %s <num_memcached> <interval_sec>\n", argv[0]);
     exit(1);
   }
 
-  double interval = atof(argv[1]);
+  // --- 1. num_memcached を取得 ---
+  int num_ports = atoi(argv[1]);
+  if (num_ports <= 0 || num_ports > NUM_PORTS) {
+    fprintf(stderr, "num_memcached must be in the range 1..%d (got %d)\n",
+            NUM_PORTS, num_ports);
+    exit(1);
+  }
+
+  // --- 2. interval を取得 ---
+  double interval = atof(argv[2]);
   if (interval <= 0) {
     fprintf(stderr, "interval must be > 0\n");
     exit(1);
@@ -125,14 +134,14 @@ int main(int argc, char *argv[]) {
   add_interval(&next, interval);
 
   while (!g_stop) {
-    // --- 1. send to all ports ---
-    for (int i = 0; i < NUM_PORTS; i++) {
+    // --- 1. send to all ports (0 .. num_ports-1) ---
+    for (int i = 0; i < num_ports; i++) {
       int port = BASE_PORT + i;
 
       if (fds[i] < 0) {
         fds[i] = connect_port(port);
         if (fds[i] < 0) {
-          printf("failed to connect to port %d", port);
+          printf("failed to connect to port %d\n", port);
           continue; // connect 失敗時はスキップ
         }
       }
@@ -145,7 +154,7 @@ int main(int argc, char *argv[]) {
     }
 
     // --- 2. recv from all ports until END\r\n ---
-    for (int i = 0; i < NUM_PORTS; i++) {
+    for (int i = 0; i < num_ports; i++) {
       if (fds[i] < 0)
         continue;
 
@@ -165,7 +174,7 @@ int main(int argc, char *argv[]) {
     add_interval(&next, interval);
   }
 
-  for (int i = 0; i < NUM_PORTS; i++) {
+  for (int i = 0; i < num_ports; i++) {
     if (fds[i] >= 0)
       close(fds[i]);
   }

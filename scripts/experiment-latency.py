@@ -185,11 +185,12 @@ def run_x_monitor_client_monitor(num_memcached, metric, interval):
     )
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
-def run_stats(interval):
+def run_stats(num_memcached, interval):
     print(f"=== [Start] Running memcached_stats_loop interval={interval} on core 5 ===")
     cmd = [
         "taskset", "-c", "5",
         f"{stats_root}/memcached_stats_loop",
+        str(num_memcached),
         str(interval),
     ]
     subprocess.Popen(cmd)
@@ -256,7 +257,7 @@ def netdata_monitoring():
                 log_to_slack(f"Interval {interval}")
                 run_netdata_server(num_memcached, metric)
                 if all_runs_in_0_4cores and metric == "user":
-                    run_stats(interval)
+                    run_stats(num_memcached, interval)
                 run_netdata_client(num_memcached, metric, interval)
                 stop_server()
                 # needed to pkill memcached completely

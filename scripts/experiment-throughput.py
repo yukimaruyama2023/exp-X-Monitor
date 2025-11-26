@@ -20,7 +20,7 @@ log_script_path = "./scripts/"
 # num_memcacheds = [1, 5, 10]
 # num_memcacheds = list(range(1, 13))
 # num_memcacheds = list(range(1, 12))
-num_memcacheds = [12]
+num_memcacheds = [4, 5, 12]
 intervals = [1, 0.5, 0.001]
 metrics = ["user", "kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -31,7 +31,7 @@ strict_comparison = True # default is False, which means almost all plugin runs
 prioritized = False # default is False. This is enabled when all_runs_in_allcores is True
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 all_runs_in_0_4cores = True #  (2025-11-25)
-cnts = 3
+cnts = 5
 #########################################################################################################
 # fixed configuration
 all_runs_in_allcores = True # default is False; this is additonal configuration. 
@@ -234,11 +234,12 @@ def run_mutilate_for_no_monitoring(cnt, num_memcached):
 
     print(f"=== [End] Running mutilate {num_memcached} ===")
 
-def run_stats(interval):
+def run_stats(num_memcached, interval):
     print(f"=== [Start] Running memcached_stats_loop interval={interval} on core 5 ===")
     cmd = [
         "taskset", "-c", "5",
         f"{stats_root}/memcached_stats_loop",
+        str(num_memcached),
         str(interval),
     ]
     subprocess.Popen(cmd)
@@ -310,7 +311,7 @@ def netdata_monitoring(cnt):
                 log_to_slack(f"Interval {interval}")
                 run_netdata_server(num_memcached, metric)
                 if all_runs_in_0_4cores and metric == "user":
-                    run_stats(interval)
+                    run_stats(num_memcached, interval)
                 run_netdata_client(cnt, num_memcached, metric, interval)
                 stop_server_for_netdata()
                 # needed to pkill memcached completely
