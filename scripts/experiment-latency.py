@@ -11,6 +11,7 @@ import datetime
 strict_comparison = True # default is False, which means almost all plugin runs. now true 2025-11-20
 prioritized = False # default is False. In true case, ntd_mcd_in_allcores set to be True
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
+all_runs_in_0_4cores = True #  (2025-11-25)
 ##############################################################################################################
 # fixed configuratin. 2025-11-20
 ntd_mcd_in_allcores = True # default is False, which means 1 netdata run on core 0 and mcd run on core 1-5, now fixed to True
@@ -22,6 +23,7 @@ remote_host = "hamatora"
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
 remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
+stats_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/stats-command"
 conf_root = "./conf"
 # remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/{mutilate_num_thread}thread/exp-latency/" # NOTE: artifact configuration
 remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/exp-latency/"
@@ -48,20 +50,31 @@ else:
     user_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
     kernel_plugin_conf = f"{conf_root}/netdata/plugin/only-disable-go-plugin.conf"
 
-# prioritized のときは「必ず all-core」で実験する
-if prioritized:
-    ntd_mcd_in_allcores = True
-
-if ntd_mcd_in_allcores:
-    mcd_cpu_aff = "all-core-execute.sh"
+if all_runs_in_0_4cores:
+    data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/all_runs_in_0_4cores/prioritized-{prioritized}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
+    mcd_cpu_aff = "pin-core0-4-execute.sh"
     netdata_cpu_aff = (
-        "let-netdata-allcore-prioritized.conf"
+    "pin-netdata-core0-4-prioritized.conf"
         if prioritized
-        else "let-netdata-allcore.conf"
+        else "pin-netdata-core0-4.conf"
     )
+
 else:
-    mcd_cpu_aff = "pin-core1-5-execute.sh"
-    netdata_cpu_aff = "pin-netdata-core0.conf"
+    # prioritized のときは「必ず all-core」で実験する
+    data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/prioritized-{prioritized}/xdp_indirectcopy-{xdp_indirectcopy}/numa0/{timestamp}"
+    if prioritized:
+        ntd_mcd_in_allcores = True
+
+    if ntd_mcd_in_allcores:
+        mcd_cpu_aff = "all-core-execute.sh"
+        netdata_cpu_aff = (
+            "let-netdata-allcore-prioritized.conf"
+            if prioritized
+            else "let-netdata-allcore.conf"
+        )
+    else:
+        mcd_cpu_aff = "pin-core1-5-execute.sh"
+        netdata_cpu_aff = "pin-netdata-core0.conf"
 
 netdata_conf = {
     "cpu_affinity": f"{conf_root}/netdata/cpu-affinity/{netdata_cpu_aff}",
@@ -75,7 +88,6 @@ else:
     xdp_user_met_program = "xdp_user_directcopy.sh"
 
 # data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/prioritized-{prioritized}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/mutilate-{mutilate_num_thread}thread/{timestamp}"  # NOTE: artifact configuration
-data_dir = f"{remote_data_root}/monitoring_latency/strict-{strict_comparison}/prioritized-{prioritized}/ntd_mcd_allcores-{ntd_mcd_in_allcores}/xdp_indirectcopy-{xdp_indirectcopy}/numa0/{timestamp}"
 
 def log_to_slack(message):
     try:
@@ -173,6 +185,21 @@ def run_x_monitor_client_monitor(num_memcached, metric, interval):
     )
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
+def run_stats(interval):
+    print(f"=== [Start] Running memcached_stats_loop interval={interval} on core 5 ===")
+    cmd = [
+        "taskset", "-c", "5",
+        f"{stats_root}/memcached_stats_loop",
+        str(interval),
+    ]
+    subprocess.Popen(cmd)
+
+def stop_stats():
+    print("=== [Stop] memcached_stats_loop ===")
+    subprocess.run(["pkill", "-f", "memcached_stats_loop"])
+
+########################
+
 def run_netdata_server(num_memcached, metric):
     run_memcached(num_memcached)
     run_netdata(num_memcached, metric)
@@ -192,7 +219,12 @@ def run_x_monitor_client(num_memcached, metric, interval):
 
 def stop_server():
     stop_mutilate()
+    if (all_runs_in_0_4cores):
+        # this might not be needed. stop_memcached() have already killed memcached_stats
+        stop_stats()
     stop_memcached()
+
+########################
 
 def setup():
     print(f"=== [Start] Setup: cpu-affinity of netdata ===")
@@ -223,6 +255,8 @@ def netdata_monitoring():
                 print(f"############## Interval {interval} ##########################")
                 log_to_slack(f"Interval {interval}")
                 run_netdata_server(num_memcached, metric)
+                if all_runs_in_0_4cores and metric == "user":
+                    run_stats(interval)
                 run_netdata_client(num_memcached, metric, interval)
                 stop_server()
                 # needed to pkill memcached completely

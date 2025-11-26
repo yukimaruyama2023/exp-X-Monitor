@@ -52,9 +52,9 @@ if all_runs_in_0_4cores:
     mcd_cpu_aff_for_netdata = "pin-core0-4-execute.sh"
     mcd_cpu_aff_for_x_monitor = "pin-core0-4-execute.sh"
     netdata_cpu_aff = (
-        "pin-netdata-core0-4.conf"
+        "pin-netdata-core0-4-prioritized.conf"
         if prioritized
-        else "pin-netdata-core0-4-prioritized.conf"
+        else "pin-netdata-core0-4.conf"
     )
 
 else:
@@ -309,7 +309,7 @@ def netdata_monitoring(cnt):
                 print(f"############## Interval {interval} ##########################")
                 log_to_slack(f"Interval {interval}")
                 run_netdata_server(num_memcached, metric)
-                if (all_runs_in_0_4cores):
+                if all_runs_in_0_4cores and metric == "user":
                     run_stats(interval)
                 run_netdata_client(cnt, num_memcached, metric, interval)
                 stop_server_for_netdata()
