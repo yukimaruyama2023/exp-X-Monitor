@@ -18,9 +18,8 @@ conf_root = "./conf"
 log_script_path = "./scripts/"
 
 # num_memcacheds = [1, 5, 10]
-# num_memcacheds = list(range(1, 13))
-# num_memcacheds = list(range(1, 12))
-num_memcacheds = [4, 5, 12]
+num_memcacheds = list(range(1, 13))
+# num_memcacheds = [4, 5, 12]
 intervals = [1, 0.5, 0.001]
 metrics = ["user", "kernel"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")

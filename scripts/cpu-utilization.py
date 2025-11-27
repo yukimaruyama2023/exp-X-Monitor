@@ -10,7 +10,7 @@ import datetime
 remote_host = "hamatora"
 # TODO: change mutialte mutilate directory
 # TODO: mutilate は消しちゃって良い．
-remote_mutilate_script_latency = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/exp-cpuusage/"
+remote_mutilate_script_latency = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/exp-cpuusage/"
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
 local_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
 x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
@@ -18,8 +18,8 @@ conf_root = "./conf"
 log_script_path = "./scripts/"
 
 # num_memcacheds = [1, 5, 10]
-# num_memcacheds = list(range(1, 13))
-num_memcacheds = [12]
+num_memcacheds = list(range(1, 13))
+# num_memcacheds = [12]
 intervals = [1, 0.5, 0.001]
 # metrics = ["user", "kernel"]
 metrics = ["kernel", "user"]
@@ -31,16 +31,15 @@ enable_mutilate = False # default is False
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 ##########################################################################################################
 
-user_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
-kernel_plugin_conf  = f"{conf_root}/netdata/plugin/all-plugin.conf"
-netdata_cpu_aff = "pin-netdata-core0.conf"
-mcd_cpu_aff = "pin-core1-5-execute.sh"
+user_plugin_conf  = f"{conf_root}/netdata/plugin/only-go-plugin.conf"
+kernel_plugin_conf  = f"{conf_root}/netdata/plugin/no-plugin.conf"
+netdata_cpu_aff = "pin-netdata-core0-4.conf"
+mcd_cpu_aff = "pin-core0-4-execute.sh"
 
 if xdp_indirectcopy:
     xdp_user_met_program = "xdp_user_indirectcopy.sh"
 else:
     xdp_user_met_program = "xdp_user_directcopy.sh"
-
 
 netdata_conf = {
     "cpu_affinity": f"{conf_root}/netdata/cpu-affinity/{netdata_cpu_aff}",
@@ -49,8 +48,6 @@ netdata_conf = {
 }
 
 data_dir = f"{local_data_root}/monitoring_cpu_utilization/enable_mutilate-{enable_mutilate}/xdp_indirectcopy-{xdp_indirectcopy}/{timestamp}"
-
-
 
 def log_to_slack(message):
     try:
@@ -76,24 +73,29 @@ def run_netdata(num_memcached, metric):
         subprocess.run(f"sudo cp {netdata_conf["user_plugin_conf"]} /etc/netdata/netdata.conf".split())
     else:
         subprocess.run(f"sudo cp {netdata_conf["kernel_plugin_conf"]} /etc/netdata/netdata.conf".split())
+    subprocess.run("sudo systemctl daemon-reload".split())
     subprocess.run(f"sudo systemctl restart netdata".split())
     # this sleep is needed for cpu usage calculation by pidstat
     time.sleep(5)
     print(f"=== [End] Running Netdata {num_memcached} ===")
 
-def run_netdata_client_monitor(num_memcached, metric):
+def run_netdata_client_monitor(num_memcached, metric, interval):
     print(f"=== [Start] Running monitoring client mcd={num_memcached} === ")
     if metric == "user":
-        stdin_input = "1\n1\n"
+        stdin_input = f"{interval}\n1\n"
     else:
-        stdin_input = "1\n0\n"
+        stdin_input = f"{interval}\n0\n"
     cmd = (
         f"cd {remote_monitoring_client} && "
         f"numactl --cpunodebind=1 --membind=1 ./client_netdata test.csv"
     )
-    proc = subprocess.Popen(f"ssh {remote_host} {cmd}".split(),
-                        stdin=subprocess.PIPE,
-                        text=True)
+    proc = subprocess.Popen(
+    f"ssh {remote_host} {cmd}".split(),
+        stdin=subprocess.PIPE,
+        text=True
+    )
+    proc.stdin.write(stdin_input)
+    proc.stdin.close()
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
 def load_xdp(metric, num_memcached):
@@ -226,10 +228,10 @@ def run_netdata_server(num_memcached, metric):
     run_memcached(num_memcached)
     run_netdata(num_memcached, metric)
 
-def run_netdata_client(num_memcached, metric):
+def run_netdata_client(num_memcached, metric, interval):
     if enable_mutilate:
         run_mutilate(num_memcached)
-    run_netdata_client_monitor(num_memcached, metric)
+    run_netdata_client_monitor(num_memcached, metric, interval)
 
 def run_x_monitor_server(num_memcached, metric):
     run_memcached(num_memcached)
@@ -282,7 +284,7 @@ def netdata_monitoring():
                 print(f"############## Interval {interval} ##########################")
                 log_to_slack(f"Interval {interval}")
                 run_netdata_server(num_memcached, metric)
-                run_netdata_client(num_memcached, metric)
+                run_netdata_client(num_memcached, metric, interval)
                 calculate_netdata_cpu(num_memcached, metric)
                 stop_for_netdata()
                 time.sleep(5)
