@@ -8,36 +8,53 @@ HATCH_LINEWIDTH = 1.6
 fontsize = 25
 labelsize = 25
 figsize = (12, 6.5) # default is (9, 6.5)
-# --- 追加：グローバルで統一色を定義 ---
 
-# 統一パレット（任意）
+# ========== Color / Hatch (あなた指定のスキームに合わせて修正) ==========
+
 COLORS = {
-    "Netdata":             "#F5A97F",   # Peach
-    # "go.d.plugin":         "#EBA0AC", 
-    "go.d.plugin":         "#E28C8C", 
-    "X-Monitor (1000ms)":  "#5AB8A8",   # Teal
-    "X-Monitor (100ms)":   "#72A7E3",   # Blue
-    "X-Monitor (10ms)":    "#C7A0E8",   # Lavender
+    # --- Netdata 系 (interval ごとに色分け) ---
+    "Netdata (1000ms)":     "#F5A97F",
+    "Netdata (500ms)":      "#F28F79",
+    "Netdata (1ms)":        "#E46876",
+
+    # go.d.plugin は Netdata と区別するために別キーのまま
+    # （色をそろえたければここを変えればよい）
+    "go.d.plugin":          "#F5A97F",
+
+    # --- X-Monitor 系 ---
+    "X-Monitor (1000ms)":   "#5AB8A8",
+    "X-Monitor (500ms)":    "#72A7E3",
+    "X-Monitor (1ms)":      "#C7A0E8",
 }
 
 HATCHES = {
-    "Netdata":        "////",
-    "go.d.plugin":    "***",
-    "X-Monitor (1000ms)":  "\\\\\\\\",
-    "X-Monitor (100ms)":   "xxxxx",
-    "X-Monitor (10ms)":    "....",
-}
+    # --- Netdata 系 ---
+    "Netdata (1000ms)":     "////",
+    "Netdata (500ms)":      "----",
+    "Netdata (1ms)":        "ooo",
 
-# 縁取り（CPU 図の棒で使用）
-EDGE_KW = dict(edgecolor="black", linewidth=0.6)
+    # go.d.plugin は常に同じ見た目
+    "go.d.plugin":          "****",
+
+    # --- X-Monitor 系 ---
+    "X-Monitor (1000ms)":   "\\\\\\\\",
+    "X-Monitor (500ms)":    "xxxx",
+    "X-Monitor (1ms)":      "....",
+}
 
 # ---- 正規表現 ----
 CYCLES_RE = re.compile(r"Elapsed cycles are (\d+)")
 TS_RE = re.compile(r"\s(\d+\.\d+):\s+bpf_trace_printk")
-# xmonitor- or x-monitor の両方対応
-FNAME_RE = re.compile(r"x-?monitor-(user|kernel)metrics-(\d+)mcd-interval(0\.01|0\.1|1)\.csv$")
-# netdata CSV
-NETDATA_FNAME_RE = re.compile(r"netdata-(user|kernel)metrics-(\d+)mcd\.csv$")
+
+# xmonitor- or x-monitor の両方対応 + interval は任意の浮動小数
+FNAME_RE = re.compile(
+    r"x-?monitor-(user|kernel)metrics-(\d+)mcd-interval([0-9.]+)\.csv$"
+)
+
+# netdata CSV（interval 付き）
+NETDATA_FNAME_RE = re.compile(
+    r"netdata-(user|kernel)metrics-(\d+)mcd-interval([0-9.]+)\.csv$"
+)
 
 # ---- X-Monitor: CPU 使用率計算 ----
 def compute_cpu_utilization(filepath: Path, cpu_freq_hz: float = 2_000_000_000) -> Optional[float]:
@@ -69,12 +86,9 @@ def parse_netdata_csv(fp: Path) -> Dict[str, float]:
         for line in f:
             if not line.startswith("Average:"):
                 continue
-            # 例: Average:  111 396500 1.12 1.20 0.00 0.00 2.33 - netdata
             parts = line.strip().split()
             if len(parts) < 10:
                 continue
-            # parts[0]='Average:', [1]=UID, [2]=PID, [3]=%usr, [4]=%system,
-            # [5]=%guest, [6]=%wait, [7]=%CPU, [8]=CPU, [9:]=Command
             try:
                 cpu_pct = float(parts[7])
             except ValueError:
@@ -83,7 +97,7 @@ def parse_netdata_csv(fp: Path) -> Dict[str, float]:
             usage[cmd] = cpu_pct
     return usage
 
-# ---- ファイル探索 ----
+# ---- ファイル探索（X-Monitor）----
 def _collect_xmon_files(
     base_dir: Path,
     metric: str,
@@ -91,19 +105,18 @@ def _collect_xmon_files(
 ) -> Dict[int, Dict[str, Path]]:
     """
     metric: 'user' or 'kernel'
-    mcd_nums: [1,5,10,...] のような memcached instance 数のリスト
+    mcd_nums: [1,5,10,...]
     戻り値: {mcd_num: {interval_str: Path, ...}, ...}
     """
     assert metric in ("user", "kernel")
     if mcd_nums is None:
-        mcd_nums = [1, 5, 10]  # 従来のデフォルト
+        mcd_nums = [1, 5, 10]
 
-    intervals = ["1", "0.1", "0.01"]
+    intervals = ["1", "0.5", "0.001"]
     result: Dict[int, Dict[str, Path]] = {}
 
     for mcd_num in mcd_nums:
-        d = f"{mcd_num:03d}mcd"
-        sub = base_dir / d
+        sub = base_dir / f"{mcd_num:03d}mcd"
         if not sub.is_dir():
             continue
 
@@ -123,43 +136,47 @@ def _collect_xmon_files(
             result[mcd_num] = available
     return result
 
-
+# ---- ファイル探索（Netdata）----
 def _collect_netdata_files(
     base_dir: Path,
     metric: str,
     mcd_nums: Optional[List[int]] = None,
-) -> Dict[int, Path]:
+) -> Dict[int, Dict[str, Path]]:
     """
     metric: 'user' or 'kernel'
     mcd_nums: [1,5,10,...]
-    戻り値: {mcd_num: Path}
+    戻り値: {mcd_num: {interval_str: Path, ...}}
     """
     assert metric in ("user", "kernel")
     if mcd_nums is None:
-        mcd_nums = [1, 5, 10]  # 従来のデフォルト
+        mcd_nums = [1, 5, 10]
 
-    result: Dict[int, Path] = {}
+    intervals = ["1", "0.5", "0.001"]
+    result: Dict[int, Dict[str, Path]] = {}
+
     for mcd_num in mcd_nums:
-        d = f"{mcd_num:03d}mcd"
-        sub = base_dir / d
+        sub = base_dir / f"{mcd_num:03d}mcd"
         if not sub.is_dir():
             continue
 
+        available: Dict[str, Path] = {}
         for p in sub.iterdir():
             if not p.is_file():
                 continue
             m = NETDATA_FNAME_RE.match(p.name)
             if not m:
                 continue
-            f_metric, f_mcd = m.group(1), m.group(2)
+            f_metric, f_mcd, f_interval = m.group(1), m.group(2), m.group(3)
             if f_metric != metric or int(f_mcd) != mcd_num:
                 continue
-            result[mcd_num] = p
+            if f_interval in intervals:
+                available[f_interval] = p
+        if available:
+            result[mcd_num] = available
     return result
 
 
 def draw_bar(ax, xpos, height, label, width, bottom=None):
-    # 下レイヤ：色ハッチ + 色枠
     ax.bar(
         xpos, height,
         width=width,
@@ -170,7 +187,6 @@ def draw_bar(ax, xpos, height, label, width, bottom=None):
         linewidth=1.1,
         zorder=2,
     )
-    # 上レイヤ：透明 + 黒枠
     ax.bar(
         xpos, height,
         width=width,
@@ -182,41 +198,80 @@ def draw_bar(ax, xpos, height, label, width, bottom=None):
     )
 
 # ---- グラフ描画 ----
-def _plot_grouped(ax, util_xmon: Dict[int, Dict[str, float]],
-                  util_netdata: Dict[int, Tuple[float, float]],
-                  metric: str):
-
-    # --- ここを追加：ハッチ線の太さを一時的に 1.6 に ---
+def _plot_grouped(
+    ax,
+    util_xmon: Dict[int, Dict[str, float]],
+    util_netdata: Dict[int, Dict[str, Tuple[float, float]]],
+    metric: str
+):
     old_hlw = plt.rcParams.get("hatch.linewidth", 1.0)
     plt.rcParams["hatch.linewidth"] = HATCH_LINEWIDTH
     try:
-        groups = sorted(set(util_xmon.keys()) | set(util_netdata.keys()))  # [1,5,10,...]
+        groups = sorted(set(util_xmon.keys()) | set(util_netdata.keys()))
         x = np.arange(len(groups))
-        width = 0.18
-        offsets = np.linspace(-1.5*width, 1.5*width, 4)
+        width = 0.12  # 6本分
 
-        # % へ変換
-        xmon_pct = {
-            s: [util_xmon.get(g, {}).get(s, float('nan')) * 100 for g in groups]
-            for s in ["1", "0.1", "0.01"]
+        # interval の順序（左から右へ）
+        intervals = ["1", "0.5", "0.001"]
+
+        # 6 本の棒: [N(1s), X(1s), N(0.5s), X(0.5s), N(1ms), X(1ms)]
+        offsets = np.linspace(-2.5 * width, 2.5 * width, 6)
+
+        # X-Monitor (% へ変換)
+        xmon_pct: Dict[str, List[float]] = {
+            s: [util_xmon.get(g, {}).get(s, float("nan")) * 100 for g in groups]
+            for s in intervals
         }
-        netdata_daemon = [util_netdata.get(g, (np.nan, np.nan))[0] for g in groups]
-        netdata_god    = [util_netdata.get(g, (np.nan, np.nan))[1] for g in groups]
 
-        # --- Netdata（stacked）---
-        if metric == "user":
-            # go.d.plugin（下段）
-            draw_bar(ax, x + offsets[0], netdata_god, "go.d.plugin", width, bottom=None)
-            # Netdata（上段, bottom=go.d）
-            draw_bar(ax, x + offsets[0], netdata_daemon, "Netdata", width,
-                     bottom=np.array(netdata_god))
-        else:
-            draw_bar(ax, x + offsets[0], netdata_daemon, "Netdata", width)
+        # Netdata (%CPU)
+        netdata_daemon: Dict[str, List[float]] = {}
+        netdata_god: Dict[str, List[float]] = {}
+        for s in intervals:
+            netdata_daemon[s] = []
+            netdata_god[s] = []
+            for g in groups:
+                daemon, god = util_netdata.get(g, {}).get(s, (np.nan, np.nan))
+                netdata_daemon[s].append(daemon)
+                netdata_god[s].append(god)
 
-        # --- X-Monitor ---
-        draw_bar(ax, x + offsets[1], xmon_pct["1"],    "X-Monitor (1000ms)", width)
-        draw_bar(ax, x + offsets[2], xmon_pct["0.1"],  "X-Monitor (100ms)",  width)
-        draw_bar(ax, x + offsets[3], xmon_pct["0.01"], "X-Monitor (10ms)",   width)
+        # interval → ラベル
+        net_label_map = {
+            "1":    "Netdata (1000ms)",
+            "0.5":  "Netdata (500ms)",
+            "0.001":"Netdata (1ms)",
+        }
+        xmon_label_map = {
+            "1":    "X-Monitor (1000ms)",
+            "0.5":  "X-Monitor (500ms)",
+            "0.001":"X-Monitor (1ms)",
+        }
+
+        # --- 描画 ---
+        for i, s in enumerate(intervals):
+            # Netdata 側
+            xpos_net = x + offsets[2 * i]
+            net_label = net_label_map[s]
+
+            if metric == "user":
+                # go.d.plugin（下段、interval によらず同じ見た目）
+                draw_bar(ax, xpos_net, netdata_god[s], "go.d.plugin", width, bottom=None)
+                # Netdata daemon（上段、interval ごとに色分け）
+                draw_bar(
+                    ax,
+                    xpos_net,
+                    netdata_daemon[s],
+                    net_label,
+                    width,
+                    bottom=np.array(netdata_god[s]),
+                )
+            else:
+                # kernel のときは go.d.plugin=0 なので全て daemon 側
+                draw_bar(ax, xpos_net, netdata_daemon[s], net_label, width)
+
+            # X-Monitor 側
+            xpos_xmon = x + offsets[2 * i + 1]
+            xmon_label = xmon_label_map[s]
+            draw_bar(ax, xpos_xmon, xmon_pct[s], xmon_label, width)
 
         # 体裁
         ax.set_xticks(x)
@@ -233,24 +288,31 @@ def _plot_grouped(ax, util_xmon: Dict[int, Dict[str, float]],
         fig.text(0.055, 0.83, "log scale", fontsize=18, ha='left', va='bottom')
 
         ax.yaxis.grid(True, linestyle="--", linewidth=1.3, alpha=0.55)
-        ax.set_axisbelow(True)  # 棒の下にグリッドを敷く
+        ax.set_axisbelow(True)
 
         from matplotlib.patches import Patch
 
-        # ---- Legend（色付きハッチ + 黒枠）----
-        order = ["Netdata", "go.d.plugin", "X-Monitor (1000ms)",
-                 "X-Monitor (100ms)", "X-Monitor (10ms)"]
+        # Legend: Netdata(3) + go.d.plugin + X-Monitor(3)
+        order = [
+            "Netdata (1000ms)",
+            "Netdata (500ms)",
+            "Netdata (1ms)",
+            "go.d.plugin",
+            "X-Monitor (1000ms)",
+            "X-Monitor (500ms)",
+            "X-Monitor (1ms)",
+        ]
         if metric == "kernel":
-            order.remove("go.d.plugin")  # kernel では go.d.plugin を出さない
+            # kernel では go.d.plugin は実質 0 だが、凡例から消すならここで remove
+            order.remove("go.d.plugin")
 
-        # 実在キーだけ残す
         order = [lab for lab in order if (lab in COLORS and lab in HATCHES)]
 
         legend_items = [
             Patch(
-                facecolor="white",           # 塗りは白
-                edgecolor=COLORS[lab],       # ハッチ色と同系で縁取り
-                hatch=HATCHES[lab],          # 模様
+                facecolor="white",
+                edgecolor=COLORS[lab],
+                hatch=HATCHES[lab],
                 linewidth=1.6,
                 label=lab
             )
@@ -267,7 +329,341 @@ def _plot_grouped(ax, util_xmon: Dict[int, Dict[str, float]],
             framealpha=1.0,
         )
     finally:
-        # --- 忘れずに元へ戻す（他の図へ副作用を残さない）---
+        plt.rcParams["hatch.linewidth"] = old_hlw
+
+
+# ---- メイン ----
+from pathlib import Path
+import re
+from typing import Dict, List, Optional, Tuple
+import matplotlib.pyplot as plt
+import numpy as np
+
+HATCH_LINEWIDTH = 1.6  
+fontsize = 25
+labelsize = 25
+figsize = (12, 6.5) # default is (9, 6.5)
+
+# ========== Color / Hatch (あなた指定のスキームに合わせて修正) ==========
+
+COLORS = {
+    # --- Netdata 系 (interval ごとに色分け) ---
+    "Netdata (1000ms)":     "#F5A97F",
+    "Netdata (500ms)":      "#F28F79",
+    "Netdata (1ms)":        "#E46876",
+
+    # go.d.plugin は Netdata と区別するために別キーのまま
+    # （色をそろえたければここを変えればよい）
+    "go.d.plugin":          "#F5A97F",
+
+    # --- X-Monitor 系 ---
+    "X-Monitor (1000ms)":   "#5AB8A8",
+    "X-Monitor (500ms)":    "#72A7E3",
+    "X-Monitor (1ms)":      "#C7A0E8",
+}
+
+HATCHES = {
+    # --- Netdata 系 ---
+    "Netdata (1000ms)":     "////",
+    "Netdata (500ms)":      "----",
+    "Netdata (1ms)":        "ooo",
+
+    # go.d.plugin は常に同じ見た目
+    "go.d.plugin":          "****",
+
+    # --- X-Monitor 系 ---
+    "X-Monitor (1000ms)":   "\\\\\\\\",
+    "X-Monitor (500ms)":    "xxxx",
+    "X-Monitor (1ms)":      "....",
+}
+
+# ---- 正規表現 ----
+CYCLES_RE = re.compile(r"Elapsed cycles are (\d+)")
+TS_RE = re.compile(r"\s(\d+\.\d+):\s+bpf_trace_printk")
+
+# xmonitor- or x-monitor の両方対応 + interval は任意の浮動小数
+FNAME_RE = re.compile(
+    r"x-?monitor-(user|kernel)metrics-(\d+)mcd-interval([0-9.]+)\.csv$"
+)
+
+# netdata CSV（interval 付き）
+NETDATA_FNAME_RE = re.compile(
+    r"netdata-(user|kernel)metrics-(\d+)mcd-interval([0-9.]+)\.csv$"
+)
+
+# ---- X-Monitor: CPU 使用率計算 ----
+def compute_cpu_utilization(filepath: Path, cpu_freq_hz: float = 2_000_000_000) -> Optional[float]:
+    total_elapsed_seconds = 0.0
+    timestamps: List[float] = []
+    with filepath.open("r") as f:
+        for line in f:
+            ts_match = TS_RE.search(line)
+            if ts_match:
+                timestamps.append(float(ts_match.group(1)))
+            cyc = CYCLES_RE.search(line)
+            if cyc:
+                total_elapsed_seconds += int(cyc.group(1)) / cpu_freq_hz
+    if len(timestamps) < 2:
+        return None
+    duration = timestamps[-1] - timestamps[0]
+    if duration <= 0:
+        return None
+    return total_elapsed_seconds / duration   # fraction (0~1)
+
+# ---- Netdata: CSV から %CPU を抽出 ----
+def parse_netdata_csv(fp: Path) -> Dict[str, float]:
+    """
+    'Average:' 行からコマンド別の %CPU を拾う。
+    返り値: {'netdata': float, 'go.d.plugin': float, ...}（存在するものだけ）
+    """
+    usage: Dict[str, float] = {}
+    with fp.open("r", errors="ignore") as f:
+        for line in f:
+            if not line.startswith("Average:"):
+                continue
+            parts = line.strip().split()
+            if len(parts) < 10:
+                continue
+            try:
+                cpu_pct = float(parts[7])
+            except ValueError:
+                continue
+            cmd = parts[9]
+            usage[cmd] = cpu_pct
+    return usage
+
+# ---- ファイル探索（X-Monitor）----
+def _collect_xmon_files(
+    base_dir: Path,
+    metric: str,
+    mcd_nums: Optional[List[int]] = None,
+) -> Dict[int, Dict[str, Path]]:
+    """
+    metric: 'user' or 'kernel'
+    mcd_nums: [1,5,10,...]
+    戻り値: {mcd_num: {interval_str: Path, ...}, ...}
+    """
+    assert metric in ("user", "kernel")
+    if mcd_nums is None:
+        mcd_nums = [1, 5, 10]
+
+    intervals = ["1", "0.5", "0.001"]
+    result: Dict[int, Dict[str, Path]] = {}
+
+    for mcd_num in mcd_nums:
+        sub = base_dir / f"{mcd_num:03d}mcd"
+        if not sub.is_dir():
+            continue
+
+        available: Dict[str, Path] = {}
+        for p in sub.iterdir():
+            if not p.is_file():
+                continue
+            m = FNAME_RE.match(p.name)
+            if not m:
+                continue
+            f_metric, f_mcd, f_interval = m.group(1), m.group(2), m.group(3)
+            if f_metric != metric or int(f_mcd) != mcd_num:
+                continue
+            if f_interval in intervals:
+                available[f_interval] = p
+        if available:
+            result[mcd_num] = available
+    return result
+
+# ---- ファイル探索（Netdata）----
+def _collect_netdata_files(
+    base_dir: Path,
+    metric: str,
+    mcd_nums: Optional[List[int]] = None,
+) -> Dict[int, Dict[str, Path]]:
+    """
+    metric: 'user' or 'kernel'
+    mcd_nums: [1,5,10,...]
+    戻り値: {mcd_num: {interval_str: Path, ...}}
+    """
+    assert metric in ("user", "kernel")
+    if mcd_nums is None:
+        mcd_nums = [1, 5, 10]
+
+    intervals = ["1", "0.5", "0.001"]
+    result: Dict[int, Dict[str, Path]] = {}
+
+    for mcd_num in mcd_nums:
+        sub = base_dir / f"{mcd_num:03d}mcd"
+        if not sub.is_dir():
+            continue
+
+        available: Dict[str, Path] = {}
+        for p in sub.iterdir():
+            if not p.is_file():
+                continue
+            m = NETDATA_FNAME_RE.match(p.name)
+            if not m:
+                continue
+            f_metric, f_mcd, f_interval = m.group(1), m.group(2), m.group(3)
+            if f_metric != metric or int(f_mcd) != mcd_num:
+                continue
+            if f_interval in intervals:
+                available[f_interval] = p
+        if available:
+            result[mcd_num] = available
+    return result
+
+
+def draw_bar(ax, xpos, height, label, width, bottom=None):
+    ax.bar(
+        xpos, height,
+        width=width,
+        bottom=bottom,
+        facecolor="white",
+        edgecolor=COLORS[label],
+        hatch=HATCHES[label],
+        linewidth=1.1,
+        zorder=2,
+    )
+    ax.bar(
+        xpos, height,
+        width=width,
+        bottom=bottom,
+        facecolor=(0,0,0,0),
+        edgecolor="black",
+        linewidth=1.3,
+        zorder=3,
+    )
+
+# ---- グラフ描画 ----
+def _plot_grouped(
+    ax,
+    util_xmon: Dict[int, Dict[str, float]],
+    util_netdata: Dict[int, Dict[str, Tuple[float, float]]],
+    metric: str
+):
+    old_hlw = plt.rcParams.get("hatch.linewidth", 1.0)
+    plt.rcParams["hatch.linewidth"] = HATCH_LINEWIDTH
+    try:
+        groups = sorted(set(util_xmon.keys()) | set(util_netdata.keys()))
+        x = np.arange(len(groups))
+        width = 0.12  # 6本分
+
+        # interval の順序（左から右へ）
+        intervals = ["1", "0.5", "0.001"]
+
+        # 6 本の棒: [N(1s), X(1s), N(0.5s), X(0.5s), N(1ms), X(1ms)]
+        offsets = np.linspace(-2.5 * width, 2.5 * width, 6)
+
+        # X-Monitor (% へ変換)
+        xmon_pct: Dict[str, List[float]] = {
+            s: [util_xmon.get(g, {}).get(s, float("nan")) * 100 for g in groups]
+            for s in intervals
+        }
+
+        # Netdata (%CPU)
+        netdata_daemon: Dict[str, List[float]] = {}
+        netdata_god: Dict[str, List[float]] = {}
+        for s in intervals:
+            netdata_daemon[s] = []
+            netdata_god[s] = []
+            for g in groups:
+                daemon, god = util_netdata.get(g, {}).get(s, (np.nan, np.nan))
+                netdata_daemon[s].append(daemon)
+                netdata_god[s].append(god)
+
+        # interval → ラベル
+        net_label_map = {
+            "1":    "Netdata (1000ms)",
+            "0.5":  "Netdata (500ms)",
+            "0.001":"Netdata (1ms)",
+        }
+        xmon_label_map = {
+            "1":    "X-Monitor (1000ms)",
+            "0.5":  "X-Monitor (500ms)",
+            "0.001":"X-Monitor (1ms)",
+        }
+
+        # --- 描画 ---
+        for i, s in enumerate(intervals):
+            # Netdata 側
+            xpos_net = x + offsets[2 * i]
+            net_label = net_label_map[s]
+
+            if metric == "user":
+                # go.d.plugin（下段、interval によらず同じ見た目）
+                draw_bar(ax, xpos_net, netdata_god[s], "go.d.plugin", width, bottom=None)
+                # Netdata daemon（上段、interval ごとに色分け）
+                draw_bar(
+                    ax,
+                    xpos_net,
+                    netdata_daemon[s],
+                    net_label,
+                    width,
+                    bottom=np.array(netdata_god[s]),
+                )
+            else:
+                # kernel のときは go.d.plugin=0 なので全て daemon 側
+                draw_bar(ax, xpos_net, netdata_daemon[s], net_label, width)
+
+            # X-Monitor 側
+            xpos_xmon = x + offsets[2 * i + 1]
+            xmon_label = xmon_label_map[s]
+            draw_bar(ax, xpos_xmon, xmon_pct[s], xmon_label, width)
+
+        # 体裁
+        ax.set_xticks(x)
+        ax.set_xticklabels([str(g) for g in groups], fontsize=fontsize)
+        ax.set_xlabel("Number of instances", fontsize=fontsize)
+        ax.set_ylabel("CPU Utilization (%)", fontsize=fontsize)
+        ax.tick_params(axis='x', labelsize=labelsize)
+        ax.tick_params(axis='y', labelsize=labelsize)
+
+        ax.set_yscale("log")
+        ax.set_ylim(bottom=1e-4)
+
+        fig = ax.figure
+        fig.text(0.055, 0.83, "log scale", fontsize=18, ha='left', va='bottom')
+
+        ax.yaxis.grid(True, linestyle="--", linewidth=1.3, alpha=0.55)
+        ax.set_axisbelow(True)
+
+        from matplotlib.patches import Patch
+
+        # Legend: Netdata(3) + go.d.plugin + X-Monitor(3)
+        order = [
+            "Netdata (1000ms)",
+            "Netdata (500ms)",
+            "Netdata (1ms)",
+            "go.d.plugin",
+            "X-Monitor (1000ms)",
+            "X-Monitor (500ms)",
+            "X-Monitor (1ms)",
+        ]
+        if metric == "kernel":
+            # kernel では go.d.plugin は実質 0 だが、凡例から消すならここで remove
+            order.remove("go.d.plugin")
+
+        order = [lab for lab in order if (lab in COLORS and lab in HATCHES)]
+
+        legend_items = [
+            Patch(
+                facecolor="white",
+                edgecolor=COLORS[lab],
+                hatch=HATCHES[lab],
+                linewidth=1.6,
+                label=lab
+            )
+            for lab in order
+        ]
+
+        ax.legend(
+            handles=legend_items,
+            loc="upper center",
+            ncol=3,
+            bbox_to_anchor=(0.5, 1.25),
+            fontsize=14,
+            frameon=True,
+            framealpha=1.0,
+        )
+    finally:
         plt.rcParams["hatch.linewidth"] = old_hlw
 
 
@@ -279,12 +675,6 @@ def make_plots(
     save: bool = True,
     out_prefix: str = "cpu_utilization",
 ):
-    """
-    base_dir: タイムスタンプ直下のディレクトリ
-    mcd_nums: [1,5,10,...]
-    save:    True のとき PNG を保存
-    out_prefix: 出力 PNG の接頭辞
-    """
     base = Path(base_dir)
     if mcd_nums is None:
         mcd_nums = [1, 5, 10]
@@ -306,24 +696,24 @@ def make_plots(
         files_net = _collect_netdata_files(base, metric, mcd_nums)
         if not files_net:
             print(f"[warn] No Netdata files for metric={metric}")
-        util_netdata: Dict[int, Tuple[float, float]] = {}
-        for mcd, fp in files_net.items():
-            usage = parse_netdata_csv(fp)
-            daemon = usage.get("netdata", np.nan)
-            god = usage.get("go.d.plugin", 0.0 if metric=="kernel" else np.nan)
-            if metric == "kernel":
-                god = 0.0
-            util_netdata[mcd] = (daemon, god)
+        util_netdata: Dict[int, Dict[str, Tuple[float, float]]] = {}
+        for mcd, by_interval in files_net.items():
+            util_netdata[mcd] = {}
+            for interval, fp in by_interval.items():
+                usage = parse_netdata_csv(fp)
+                daemon = usage.get("netdata", np.nan)
+                god = usage.get("go.d.plugin", 0.0 if metric=="kernel" else np.nan)
+                if metric == "kernel":
+                    god = 0.0
+                util_netdata[mcd][interval] = (daemon, god)
 
-        # プロット
         fig, ax = plt.subplots(figsize=figsize)
         _plot_grouped(ax, util_xmon, util_netdata, metric)
         fig.tight_layout()
 
-        # ---- PNG 保存のみ ----
         if save:
-            png_path = base / f"{out_prefix}-{metric}.png"
-            fig.savefig(png_path, bbox_inches="tight")
-            print(f"[info] Saved: {png_path}")
+            pdf_path = base / f"{out_prefix}-{metric}.pdf"
+            fig.savefig(pdf_path, bbox_inches="tight")
+            print(f"[info] Saved: {pdf_path}")
 
         plt.show()

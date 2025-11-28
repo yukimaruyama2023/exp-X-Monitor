@@ -7,8 +7,12 @@ from packaging import version
 
 
 fontsize = 25  # default is 25
-legend_fontsize = 17  # default is 17
-figsize = (20, 7)  # default is (10, 7)
+legend_fontsize = 23  # default is 17
+figsize = (24, 5)  # default is (10, 7)
+ylim = 1000
+line_width = 0.70
+GROUP_SPACING = 7.0
+bbox_to_anchor = (0.5, 1.40)
 
 THROUGHPUT_RE = re.compile(r"Total QPS\s*=\s*([\d.]+)")
 
@@ -197,8 +201,8 @@ def collect_stats_across_runs(base_dir, metric, nums, run_ids=None):
 def _plot_one_metric(means, stds, nums, save_path):
     import matplotlib.pyplot as plt
 
-    x = np.arange(len(nums))
-    width = 0.10  # 7 本になるので少し細く（元は 0.13）
+    x = np.arange(len(nums)) * GROUP_SPACING
+    width = line_width  # 7 本になるので少し細く（元は 0.13）
     offsets = np.linspace(-width*3, width*3, len(LABELS))
 
     plt.figure(figsize=figsize)
@@ -244,7 +248,7 @@ def _plot_one_metric(means, stds, nums, save_path):
     plt.tick_params(axis='y', labelsize=fontsize)
     plt.ylabel("Throughput (K ops/sec)", fontsize=fontsize)
     # plt.ylim(0, 1050)
-    plt.ylim(0, 1000)
+    plt.ylim(0, ylim)
     plt.grid(axis="y", linestyle="--", alpha=0.4)
 
     # 凡例（グラフ外）
@@ -265,7 +269,7 @@ def _plot_one_metric(means, stds, nums, save_path):
         legend_handles,
         LABELS,
         loc="upper center",
-        bbox_to_anchor=(0.5, 1.23),   # ← グラフの上に配置
+        bbox_to_anchor=bbox_to_anchor,   # ← グラフの上に配置
         ncol=4,                       # 7 本なので 4 + 3 などに
         fontsize=legend_fontsize,
         frameon=True
@@ -276,8 +280,8 @@ def _plot_one_metric(means, stds, nums, save_path):
 def plot_grouped_both(base_dir, nums=[1,5,10], run_ids=None):
     # base_dir はタイムスタンプ直下（0〜9/001mcd ...）を想定（従来通り）
 
-    kernel_out = os.path.join(base_dir, "throughput_kernel.png")
-    user_out   = os.path.join(base_dir, "throughput_user.png")
+    kernel_out = os.path.join(base_dir, "throughput_kernel.pdf")
+    user_out   = os.path.join(base_dir, "throughput_user.pdf")
 
     # 1枚目: kernel
     means_k, stds_k = collect_stats_across_runs(base_dir, "kernel", nums, run_ids)
@@ -304,3 +308,5 @@ def print_throughput_means(base_dir, nums, run_ids=None):
         print(f"\n[ {label} ]")
         for n, v in zip(nums, means_u[label]):
             print(f"  {n} mcd : {v:.3f} ops/sec")
+
+
