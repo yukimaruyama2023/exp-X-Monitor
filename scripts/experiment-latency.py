@@ -113,7 +113,7 @@ def stop_memcached():
 def run_netdata(num_memcached, metric):
     print(f"=== [Start] Running Netdata {num_memcached} ===")
     # memcached_conf = f"{conf_root}/{str(num_memcached).zfill(3)}mcd/go.d/memcached.conf"
-    memcached_conf = f"{conf_root}/netdata/num_mcd/{str(num_memcached).zfill(3)}-memcached.conf"
+    memcached_conf = f"{conf_root}/netdata/go.d/num_mcd/{str(num_memcached).zfill(3)}-memcached.conf"
     print(f"{memcached_conf}")
     subprocess.run(f"sudo cp {memcached_conf} /etc/netdata/go.d/memcached.conf".split())
     if metric == "user":

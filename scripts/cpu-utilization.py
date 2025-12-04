@@ -66,7 +66,7 @@ def run_memcached(num_memcached):
 def run_netdata(num_memcached, metric):
     print(f"=== [Start] Running Netdata {num_memcached} ===")
     # memcached_conf = f"{conf_root}/{str(num_memcached).zfill(3)}mcd/go.d/memcached.conf"
-    memcached_conf = f"{conf_root}/netdata/num_mcd/{str(num_memcached).zfill(3)}-memcached.conf"
+    memcached_conf = f"{conf_root}/netdata/go.d/num_mcd/{str(num_memcached).zfill(3)}-memcached.conf"
     print(f"{memcached_conf}")
     subprocess.run(f"sudo cp {memcached_conf} /etc/netdata/go.d/memcached.conf".split())
     if metric == "user":
@@ -136,9 +136,9 @@ def run_x_monitor_client_monitor(num_memcached, metric, interval):
     )
     print(f"=== [End] Running monitoring client mcd={num_memcached} === ")
 
-def calculate_netdata_cpu(num_memcached, metric):
+def calculate_netdata_cpu(num_memcached, metric, interval):
     print(f"=== [Start] Calculate Netdata CPU Utilization, {num_memcached} instance, {metric} metrics === ")
-    out_path = f"{data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd.csv"
+    out_path = f"{data_dir}/{str(num_memcached).zfill(3)}mcd/netdata-{metric}metrics-{num_memcached}mcd-interval{interval}.csv"
     # cmd = f"pidstat -u -p $(pgrep -d',' -f netdata) 1 10"
     cmd = f"pidstat -u -p $(pgrep -d',' -f netdata) 40 1"
     with open(out_path, "w") as f:
@@ -285,7 +285,7 @@ def netdata_monitoring():
                 log_to_slack(f"Interval {interval}")
                 run_netdata_server(num_memcached, metric)
                 run_netdata_client(num_memcached, metric, interval)
-                calculate_netdata_cpu(num_memcached, metric)
+                calculate_netdata_cpu(num_memcached, metric, interval)
                 stop_for_netdata()
                 time.sleep(5)
 
