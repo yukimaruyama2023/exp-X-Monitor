@@ -13,7 +13,7 @@ strict_comparison = True # default is False, which means almost all plugin runs
 prioritized = False # default is False. This is enabled when all_runs_in_allcores is True
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 all_runs_in_0_4cores = True #  (2025-11-25)
-cnts = 5
+cnts = 1
 #########################################################################################################
 # fixed configuration
 all_runs_in_allcores = True # default is False; this is additonal configuration. 
@@ -35,9 +35,9 @@ conf_root = "./conf"
 log_script_path = "./scripts/"
 
 # num_instances = [1, 5, 10]
-num_instances = list(range(1, 13))
+# num_instances = list(range(1, 13))
 # num_instances = [4, 5, 12]
-# num_instances = [12]
+num_instances = [1]
 intervals = [1, 0.5, 0.001]
 # intervals = [0.0002]
 metrics = ["user", "kernel"]
@@ -411,6 +411,7 @@ def netdata_monitoring(cnt):
                 print(f"############## Interval {interval} ##########################")
                 log_to_slack(f"Interval {interval}")
                 run_netdata_server(num_instance, metric)
+                time.sleep(5)
                 if all_runs_in_0_4cores and metric == "user":
                     if ismemcached:
                         run_stats(num_instance, interval)

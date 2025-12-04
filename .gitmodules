@@ -1,3 +1,0 @@
-[submodule "src/client/redis"]
-	path = src/client/redis
-	url = git@github.com:redis/redis.git
