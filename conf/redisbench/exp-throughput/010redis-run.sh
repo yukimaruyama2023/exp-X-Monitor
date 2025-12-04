@@ -10,3 +10,4 @@ timeout 43 numactl --cpunodebind=0 --membind=0 /home/maruyama/workspace/exp-X-Mo
 timeout 43 numactl --cpunodebind=0 --membind=0 /home/maruyama/workspace/exp-X-Monitor/src/client/redis/src/redis-benchmark -h 10.10.10.1 -p 6386 --threads 24 -c 24 -P 1 -d 1000000 -t get -n 1000000000 >tmp7.txt &
 timeout 43 numactl --cpunodebind=0 --membind=0 /home/maruyama/workspace/exp-X-Monitor/src/client/redis/src/redis-benchmark -h 10.10.10.1 -p 6387 --threads 24 -c 24 -P 1 -d 1000000 -t get -n 1000000000 >tmp8.txt &
 timeout 43 numactl --cpunodebind=0 --membind=0 /home/maruyama/workspace/exp-X-Monitor/src/client/redis/src/redis-benchmark -h 10.10.10.1 -p 6388 --threads 24 -c 24 -P 1 -d 1000000 -t get -n 1000000000 >tmp9.txt &
+wait
