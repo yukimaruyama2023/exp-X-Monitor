@@ -287,6 +287,7 @@ def run_redisbench_for_netdata(cnt, num_instance, metric, interval):
     remote_cmd = (
         f"cd {remote_data_root} && "
         f"{remote_redisbench_script_throughput}/{num_str}redis-run.sh && "
+        f"sleep 50 && "
         f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path}'
     )
     # Netdata のモニタリングクライアントを先に起動
@@ -330,6 +331,7 @@ def run_redisbench_for_x_monitor(cnt, num_instance, metric, interval):
     remote_cmd = (
         f"cd {remote_data_root} && "
         f"{remote_redisbench_script_throughput}/{num_str}redis-run.sh && "
+        f"sleep 50 && "
         f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path}'
     )
     # X-Monitor 側のクライアントモニタリング開始
@@ -370,6 +372,7 @@ def run_redisbench_for_no_monitoring(cnt, num_instance):
     remote_cmd = (
         f"cd {remote_data_root} && "
         f"{remote_redisbench_script_throughput}/{num_str}redis-run.sh && "
+        f"sleep 50 && "
         f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path}'
     )
     full_cmd = f"ssh {remote_host} '{remote_cmd}'"
