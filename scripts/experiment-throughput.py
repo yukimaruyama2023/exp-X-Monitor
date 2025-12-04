@@ -22,10 +22,8 @@ mcd_in_allcores_for_x_monitor = True # default is False; mcd for x_monitor runs 
 
 remote_host = "hamatora"
 # not latency but throughput
-if ismemcached:
-    remote_mutilate_script_throughput = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/memcached/exp-throughput/"
-else:
-    remote_mutilate_script_throughput = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/redis/exp-throughput/"
+remote_mutilate_script_throughput = "/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/memcached/exp-throughput/"
+remote_redisbench_script_throughput = "/home/maruyama/workspace/exp-X-Monitor/conf/redisbench/exp-throughput/"
 
 remote_monitoring_client = "/home/maruyama/workspace/exp-X-Monitor/src/client/Monitoring_Client/"
 remote_data_root = "/home/maruyama/workspace/exp-X-Monitor/data/"
@@ -255,57 +253,129 @@ def run_mutilate_for_netdata(cnt, num_instance, metric, interval):
     print(f"=== [Start] Running mutilate {num_instance} ===")
     # 1. execute path is remote_mutilate_script_throughput not ..latency
     # 2. specify output file
-    if ismemcached:
-        cmd = (
-            f"{remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}mcd/netdata-{metric}metrics-{num_instance}mcd-interval{interval}.txt"
-        )
-        subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-load.sh".split())
-    else:
-        cmd = (
-            f"{remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}redis-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}redis/netdata-{metric}metrics-{num_instance}redis-interval{interval}.txt"
-        )
-        subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}redis-load.sh".split())
+    cmd = (
+        f"{remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}mcd/netdata-{metric}metrics-{num_instance}mcd-interval{interval}.txt"
+    )
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-load.sh".split())
     run_netdata_client_monitor(num_instance, metric, interval)
     subprocess.run(f"ssh {remote_host} {cmd}".split())
     print(f"=== [End] Running mutilate {num_instance} ===")
+#
+# def run_redisbench_for_netdata(cnt, num_instance, metric, interval):
+#     print(f"=== [Start] Running redisbench {num_instance} ===")
+#     # 1. execute path is remote_mutilate_script_throughput not ..latency
+#     # 2. specify output file
+#     cmd = (
+#         f"{remote_redisbench_script_throughput}/{str(num_instance).zfill(3)}redis-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}redis/netdata-{metric}metrics-{num_instance}redis-interval{interval}.txt"
+#     )
+#     # subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}redis-load.sh".split())
+#     run_netdata_client_monitor(num_instance, metric, interval)
+#     subprocess.run(f"ssh {remote_host} {cmd}".split())
+#     print(f"=== [End] Running redisbench {num_instance} ===")
+
+def run_redisbench_for_netdata(cnt, num_instance, metric, interval):
+    print(f"=== [Start] Running redisbench {num_instance} ===")
+    num_str = str(num_instance).zfill(3)
+    # リモートでの処理:
+    # 1. remote_data_root に cd
+    # 2. NNNredis-run.sh を実行して tmp0.txt〜tmp11.txt を生成
+    # 3. tmp*.txt の最後の行を順に標準出力へ流し、それをそのままリモートの out_path にリダイレクト
+    remote_out_path = (
+        f"{data_dir}/{cnt}/{num_str}redis/"
+        f"netdata-{metric}metrics-{num_instance}redis-interval{interval}.txt"
+    )
+    remote_cmd = (
+        f"cd {remote_data_root} && "
+        f"{remote_redisbench_script_throughput}/{num_str}redis-run.sh && "
+        f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path}'
+    )
+    # Netdata のモニタリングクライアントを先に起動
+    run_netdata_client_monitor(num_instance, metric, interval)
+    # リモートで redisbench + 集約 + リモートファイルへの出力
+    full_cmd = f"ssh {remote_host} '{remote_cmd}'"
+    subprocess.run(full_cmd, shell=True, check=True)
+    print(f"=== [End] Running redisbench {num_instance} ===")
 
 def run_mutilate_for_x_monitor(cnt, num_instance, metric, interval):
     print(f"=== [Start] Running mutilate {num_instance} ===")
     # 1. execute path is remote_mutilate_script_throughput not ..latency
     # 2. specify output file
-    if ismemcached:
-        cmd = (
-            f"{remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}mcd/xmonitor-{metric}metrics-{num_instance}mcd-interval{interval}.txt"
-        )
-        subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-load.sh".split())
-    else:
-        cmd = (
-            f"{remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}redis-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}redis/xmonitor-{metric}metrics-{num_instance}redis-interval{interval}.txt"
-        )
-        subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}redis-load.sh".split())
+    cmd = (
+        f"{remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}mcd/xmonitor-{metric}metrics-{num_instance}mcd-interval{interval}.txt"
+    )
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-load.sh".split())
     run_x_monitor_client_monitor(num_instance, metric, interval)
     subprocess.run(f"ssh {remote_host} {cmd}".split())
     print(f"=== [End] Running mutilate {num_instance} ===")
 
+# def run_redisbench_for_x_monitor(cnt, num_instance, metric, interval):
+#     print(f"=== [Start] Running mutilate {num_instance} ===")
+#     # 1. execute path is remote_mutilate_script_throughput not ..latency
+#     # 2. specify output file
+#     cmd = (
+#         f"{remote_redisbench_script_throughput}/{str(num_instance).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}mcd/xmonitor-{metric}metrics-{num_instance}mcd-interval{interval}.txt"
+#     )
+#     # subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-load.sh".split())
+#     run_x_monitor_client_monitor(num_instance, metric, interval)
+#     subprocess.run(f"ssh {remote_host} {cmd}".split())
+#     print(f"=== [End] Running mutilate {num_instance} ===")
+
+def run_redisbench_for_x_monitor(cnt, num_instance, metric, interval):
+    print(f"=== [Start] Running redisbench {num_instance} ===")
+    num_str = str(num_instance).zfill(3)
+    remote_out_path = (
+        f"{data_dir}/{cnt}/{num_str}redis/"
+        f"xmonitor-{metric}metrics-{num_instance}redis-interval{interval}.txt"
+    )
+    remote_cmd = (
+        f"cd {remote_data_root} && "
+        f"{remote_redisbench_script_throughput}/{num_str}redis-run.sh && "
+        f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path}'
+    )
+    # X-Monitor 側のクライアントモニタリング開始
+    run_x_monitor_client_monitor(num_instance, metric, interval)
+    full_cmd = f"ssh {remote_host} '{remote_cmd}'"
+    subprocess.run(full_cmd, shell=True, check=True)
+    print(f"=== [End] Running redisbench {num_instance} ===")
 
 def run_mutilate_for_no_monitoring(cnt, num_instance):
     print(f"=== [Start] Running mutilate {num_instance} ===")
     # 1. execute path is remote_mutilate_script_throughput not ..latency
     # 2. specify output file
-    if ismemcached:
-        cmd = (
-            f"{remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}mcd/no_monitoring-{num_instance}mcd.txt"
-        )
-        subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-load.sh".split())
-    else:
-        cmd = (
-            f"{remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}redis-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}redis/no_monitoring-{num_instance}redis.txt"
-        )
-        subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}redis-load.sh".split())
-
+    cmd = (
+        f"{remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}mcd/no_monitoring-{num_instance}mcd.txt"
+    )
+    subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-load.sh".split())
     subprocess.run(f"ssh {remote_host} {cmd}".split())
-
     print(f"=== [End] Running mutilate {num_instance} ===")
+
+# def run_redisbench_for_no_monitoring(cnt, num_instance):
+#     print(f"=== [Start] Running mutilate {num_instance} ===")
+#     # 1. execute path is remote_mutilate_script_throughput not ..latency
+#     # 2. specify output file
+#     cmd = (
+#         f"{remote_redisbench_script_throughput}/{str(num_instance).zfill(3)}mcd-run.sh > {data_dir}/{cnt}/{str(num_instance).zfill(3)}mcd/no_monitoring-{num_instance}mcd.txt"
+#     )
+#     # subprocess.run(f"ssh {remote_host} {remote_mutilate_script_throughput}/{str(num_instance).zfill(3)}mcd-load.sh".split())
+#     subprocess.run(f"ssh {remote_host} {cmd}".split())
+#     print(f"=== [End] Running mutilate {num_instance} ===")
+
+def run_redisbench_for_no_monitoring(cnt, num_instance):
+    print(f"=== [Start] Running redisbench {num_instance} ===")
+    num_str = str(num_instance).zfill(3)
+    remote_out_path = (
+        f"{data_dir}/{cnt}/{num_str}redis/"
+        f"no_monitoring-{num_instance}redis.txt"
+    )
+    remote_cmd = (
+        f"cd {remote_data_root} && "
+        f"{remote_redisbench_script_throughput}/{num_str}redis-run.sh && "
+        f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path}'
+    )
+    full_cmd = f"ssh {remote_host} '{remote_cmd}'"
+    subprocess.run(full_cmd, shell=True, check=True)
+    print(f"=== [End] Running redisbench {num_instance} ===")
+
 
 def run_stats(num_instance, interval):
     print(f"=== [Start] Running memcached_stats_loop interval={interval} on core 5 ===")
@@ -343,7 +413,10 @@ def run_netdata_server(num_instance, metric):
 
 def run_netdata_client(cnt, num_instance, metric, interval):
     # monitoring client is called inside run_mutilate_for_netdata
-    run_mutilate_for_netdata(cnt, num_instance, metric, interval)
+    if ismemcached:
+        run_mutilate_for_netdata(cnt, num_instance, metric, interval)
+    else:
+        run_redisbench_for_netdata(cnt, num_instance, metric, interval)
 
 def run_x_monitor_server(num_instance, metric):
     run_database_for_x_monitor(num_instance)
@@ -351,7 +424,10 @@ def run_x_monitor_server(num_instance, metric):
 def run_x_monitor_client(cnt, num_instance, metric, interval):
     load_xdp(metric, num_instance)
     # monitoring client is called inside run_mutilate_for_x_monitor
-    run_mutilate_for_x_monitor(cnt, num_instance, metric, interval)
+    if ismemcached:
+        run_mutilate_for_x_monitor(cnt, num_instance, metric, interval)
+    else:
+        run_redisbench_for_x_monitor(cnt, num_instance, metric, interval)
     detach_xdp()
 
 def stop_server_for_netdata():
@@ -453,7 +529,10 @@ def no_monitoring(cnt):
         print(f"############## Running {num_instance} servers ##########################")
         make_output_dir(cnt, num_instance)
         run_database_for_no_monitor(num_instance)
-        run_mutilate_for_no_monitoring(cnt, num_instance)
+        if ismemcached:
+            run_mutilate_for_no_monitoring(cnt, num_instance)
+        else:
+            run_redisbench_for_no_monitoring(cnt, num_instance)
         stop_database()
         time.sleep(5)
 
