@@ -7464,7 +7464,7 @@ void register_metrics(void) {
     return;
   }
   printf("fd, is %d\n", fd);
-  uint32_t num_metrics_struct = 3;
+  uint32_t num_metrics_struct = 1;
   if (ioctl(fd, XMON_IOC_CREATE, &num_metrics_struct) < 0) {
     perror("ioctl xmon_ioc_create ");
     return;
@@ -7475,28 +7475,28 @@ void register_metrics(void) {
     .head_addr = (uint64_t)&server,
     .size = 700,
   };
-  struct xmon_ioc_set_elem se_self_ru = {
-    .idx = 1,
-    .head_addr = (uint64_t)&self_ru,
-    .size = sizeof(self_ru),
-  };
-  struct xmon_ioc_set_elem se_c_ru = {
-    .idx = 2,
-    .head_addr = (uint64_t)&c_ru,
-    .size = sizeof(c_ru),
-  };
+  // struct xmon_ioc_set_elem se_self_ru = {
+  //   .idx = 1,
+  //   .head_addr = (uint64_t)&self_ru,
+  //   .size = sizeof(self_ru),
+  // };
+  // struct xmon_ioc_set_elem se_c_ru = {
+  //   .idx = 2,
+  //   .head_addr = (uint64_t)&c_ru,
+  //   .size = sizeof(c_ru),
+  // };
   if (ioctl(fd, XMON_IOC_SET_ELEM, &se_server) < 0) {
     perror("ioctl xmon_ioc_set_elem");
     return;
   }
-  if (ioctl(fd, XMON_IOC_SET_ELEM, &se_self_ru) < 0) {
-    perror("ioctl xmon_ioc_set_elem");
-    return;
-  }
-  if (ioctl(fd, XMON_IOC_SET_ELEM, &se_c_ru) < 0) {
-    perror("ioctl xmon_ioc_set_elem");
-    return;
-  }
+  // if (ioctl(fd, XMON_IOC_SET_ELEM, &se_self_ru) < 0) {
+  //   perror("ioctl xmon_ioc_set_elem");
+  //   return;
+  // }
+  // if (ioctl(fd, XMON_IOC_SET_ELEM, &se_c_ru) < 0) {
+  //   perror("ioctl xmon_ioc_set_elem");
+  //   return;
+  // }
   int port_num = server.port; 
   if (ioctl(fd, XMON_IOC_REGISTER_PORT, &port_num) < 0) {
     perror("ioctl xmon_ioc_register_port ");

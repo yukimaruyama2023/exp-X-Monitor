@@ -13,7 +13,7 @@ strict_comparison = True # default is False, which means almost all plugin runs
 prioritized = False # default is False. This is enabled when all_runs_in_allcores is True
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 all_runs_in_0_4cores = True #  (2025-11-25)
-cnts = 1
+cnts = 5
 #########################################################################################################
 # fixed configuration
 all_runs_in_allcores = True # default is False; this is additonal configuration. 
@@ -33,9 +33,9 @@ conf_root = "./conf"
 log_script_path = "./scripts/"
 
 # num_instances = [1, 5, 10]
-# num_instances = list(range(1, 13))
+num_instances = list(range(1, 13))
 # num_instances = [4, 5, 12]
-num_instances = [1]
+# num_instances = [1]
 intervals = [1, 0.5, 0.001]
 # intervals = [0.0002]
 metrics = ["user", "kernel"]
@@ -287,7 +287,8 @@ def run_redisbench_for_netdata(cnt, num_instance, metric, interval):
     remote_cmd = (
         f"cd {remote_data_root} && "
         f"{remote_redisbench_script_throughput}/{num_str}redis-run.sh && "
-        f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path}'
+        f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path} && '
+        f'rm -f tmp*.txt'
     )
     # Netdata のモニタリングクライアントを先に起動
     run_netdata_client_monitor(num_instance, metric, interval)
@@ -330,7 +331,8 @@ def run_redisbench_for_x_monitor(cnt, num_instance, metric, interval):
     remote_cmd = (
         f"cd {remote_data_root} && "
         f"{remote_redisbench_script_throughput}/{num_str}redis-run.sh && "
-        f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path}'
+        f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path} && '
+        f'rm -f tmp*.txt'
     )
     # X-Monitor 側のクライアントモニタリング開始
     run_x_monitor_client_monitor(num_instance, metric, interval)
@@ -370,7 +372,8 @@ def run_redisbench_for_no_monitoring(cnt, num_instance):
     remote_cmd = (
         f"cd {remote_data_root} && "
         f"{remote_redisbench_script_throughput}/{num_str}redis-run.sh && "
-        f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path}'
+        f'for f in tmp*.txt; do tail -n 1 "$f"; done > {remote_out_path} && '
+        f'rm -f tmp*.txt'
     )
     full_cmd = f"ssh {remote_host} '{remote_cmd}'"
     subprocess.run(full_cmd, shell=True, check=True)

@@ -6,12 +6,21 @@
 #include <netinet/in.h> // needed for "IPPROTO_UDP"
 #include "redis_metrics.h"
 
-#define NUM_APP 12
+#define NUM_APP 1
+// #define RETURN_METRIC_SIZE 512
+
+// struct buf_700{
+//   char buf[700];
+// };
 
 struct redis_metrics {
-  struct redisServer redisServer;
-  struct rusage rusage;
+  char buf[5000];
 };
+
+// struct redis_metrics {
+//   struct redisServer redisServer;
+//   struct rusage rusage;
+// };
 
 static __always_inline void swap_src_dst_mac(struct ethhdr *eth) {
     __u8 tmp[ETH_ALEN];
@@ -120,6 +129,23 @@ int xdp_user_indirectcopy(struct xdp_md *ctx) {
       bpf_xdp_store_bytes(ctx, payload_offset, &redis_metrics[i], sizeof(struct redis_metrics));
       payload_offset += sizeof(struct redis_metrics);
     }
+    
+    // for (int i = 0; i < NUM_APP; i++) {
+    //   if ((void *)payload_offset + RETURN_METRIC_SIZE > data_end) return XDP_PASS;
+    //   bpf_xdp_store_bytes(ctx, payload_offset, &redis_metrics[i], RETURN_METRIC_SIZE);
+    //   payload_offset += RETURN_METRIC_SIZE;
+    // }
+
+    // for (int i = 0; i < NUM_APP; i++) {
+    //     void *write_end = data + payload_offset + RETURN_METRIC_SIZE;
+    //     if (write_end > data_end)
+    //         return XDP_PASS;
+    //     bpf_xdp_store_bytes(ctx, payload_offset,
+    //                         &redis_metrics[i],
+    //                         RETURN_METRIC_SIZE);
+    //
+    //     payload_offset += RETURN_METRIC_SIZE;
+    // }
 
     bpf_rdtsc((long *)&end);
     elapsed_cycles = end - start;
