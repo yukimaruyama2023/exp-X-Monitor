@@ -7473,7 +7473,7 @@ void register_metrics(void) {
   struct xmon_ioc_set_elem se_server = {
     .idx = 0,
     .head_addr = (uint64_t)&server,
-    .size = 700,
+    .size = 720,
   };
   // struct xmon_ioc_set_elem se_self_ru = {
   //   .idx = 1,

@@ -6,7 +6,7 @@
 #include <netinet/in.h> // needed for "IPPROTO_UDP"
 #include "redis_metrics.h"
 
-#define NUM_APP 1
+#define NUM_APP 12
 // #define RETURN_METRIC_SIZE 512
 
 // struct buf_700{
@@ -14,7 +14,7 @@
 // };
 
 struct redis_metrics {
-  char buf[5000];
+  char buf[740];
 };
 
 // struct redis_metrics {
