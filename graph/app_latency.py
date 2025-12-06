@@ -186,6 +186,18 @@ def plot_grouped_latency99(base_dir, nums=[1,5,10], run_ids=None):
         _plot_latency99(means, stds, nums, metric, save_path=out_path)
 
 
+# def print_latency99_means(base_dir, nums, run_ids=None):
+#     """
+#     user / kernel 両方出力
+#     """
+#     for metric in ["kernel", "user"]:
+#         print(f"\n===== 99th latency (ms): Means for {metric} metrics =====")
+#         means, stds = collect_latency99_across_runs(base_dir, metric, nums, run_ids)
+#         for label in LABELS:
+#             print(f"\n[ {metric} | {label} ]")
+#             for n, v in zip(nums, means[label]):
+#                 print(f"  {n} mcd : {v:.3f} ms")
+
 def print_latency99_means(base_dir, nums, run_ids=None):
     """
     user / kernel 両方出力
@@ -196,4 +208,5 @@ def print_latency99_means(base_dir, nums, run_ids=None):
         for label in LABELS:
             print(f"\n[ {metric} | {label} ]")
             for n, v in zip(nums, means[label]):
+                # 小数点以下 3 桁で固定表示
                 print(f"  {n} mcd : {v:.3f} ms")
