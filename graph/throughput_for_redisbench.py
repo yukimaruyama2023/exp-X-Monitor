@@ -8,7 +8,8 @@ from packaging import version
 
 fontsize = 25  # default is 25
 legend_fontsize = 23  # default is 17
-figsize = (24, 5)  # default is (10, 7)
+# figsize = (24, 5)  # memcached だけの時はこれでちょうど良いサイズだった
+figsize = (33, 4)  # default is (10, 7)
 ylim = 1000
 line_width = 0.70
 GROUP_SPACING = 7.0
@@ -187,7 +188,7 @@ def collect_stats_across_runs(base_dir, metric, nums, run_ids=None):
     if run_ids is None:
         # redisbench 実験は 0〜4 の 5 回試行
         # run_ids = [str(i) for i in range(5)]
-        run_ids = [str(i) for i in range(3)]
+        run_ids = [str(i) for i in range(5)]
 
     means = {label: [] for label in LABELS}
     stds  = {label: [] for label in LABELS}
@@ -221,9 +222,10 @@ def collect_stats_across_runs(base_dir, metric, nums, run_ids=None):
 def _plot_one_metric(means, stds, nums, save_path):
     x = np.arange(len(nums)) * GROUP_SPACING
     width = line_width
-    offsets = np.linspace(-width*3, width*3, len(LABELS))
+    offsets = np.linspace(-width * 3, width * 3, len(LABELS))
 
-    plt.figure(figsize=figsize)
+    # ここだけ fig / ax を明示的に使う
+    fig, ax = plt.subplots(figsize=figsize)
 
     # ハッチ線を太くして見やすく
     old_hatch_lw = plt.rcParams.get("hatch.linewidth", 1.0)
@@ -233,8 +235,9 @@ def _plot_one_metric(means, stds, nums, save_path):
         xpos = x + offsets[i]
 
         # --- 下レイヤ: ハッチ＋色（枠も色） ---
-        plt.bar(
-            xpos, means[label],
+        ax.bar(
+            xpos,
+            means[label],
             yerr=stds[label],
             width=width,
             facecolor="white",
@@ -248,8 +251,9 @@ def _plot_one_metric(means, stds, nums, save_path):
         )
 
         # --- 上レイヤ: 透明＋黒枠（ハッチなし） ---
-        plt.bar(
-            xpos, means[label],
+        ax.bar(
+            xpos,
+            means[label],
             width=width,
             facecolor=(0, 0, 0, 0),
             edgecolor="black",
@@ -261,16 +265,18 @@ def _plot_one_metric(means, stds, nums, save_path):
     plt.rcParams["hatch.linewidth"] = old_hatch_lw
 
     # 軸
-    plt.xticks(x, [str(n) for n in nums], fontsize=fontsize)
-    plt.xlabel("Number of instances", fontsize=fontsize)
-    plt.tick_params(axis="y", labelsize=fontsize)
-    plt.ylabel("Throughput (K ops/sec)", fontsize=fontsize)
-    plt.ylim(0, ylim)
-    plt.grid(axis="y", linestyle="--", alpha=0.4)
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(n) for n in nums], fontsize=fontsize)
+    ax.set_xlabel("Number of instances", fontsize=fontsize)
+    ax.tick_params(axis="y", labelsize=fontsize)
+    ax.set_ylabel("Throughput (K ops/sec)", fontsize=fontsize)
+    ax.set_ylim(0, ylim)
+    ax.grid(axis="y", linestyle="--", alpha=0.4)
 
     # 凡例（グラフ外）
     import matplotlib.patches as mpatches
     import matplotlib.patheffects as pe
+
     legend_handles = []
     for label in LABELS:
         p = mpatches.Patch(
@@ -279,24 +285,37 @@ def _plot_one_metric(means, stds, nums, save_path):
             hatch=HATCHES[label],
             linewidth=1.2,
         )
-        p.set_path_effects([pe.Stroke(linewidth=1.4, foreground="black"), pe.Normal()])
+        p.set_path_effects(
+            [pe.Stroke(linewidth=1.4, foreground="black"), pe.Normal()]
+        )
         legend_handles.append(p)
 
-    plt.legend(
+    # legend オブジェクトを取得するのがポイント
+    leg = ax.legend(
         legend_handles,
         LABELS,
         loc="upper center",
         bbox_to_anchor=bbox_to_anchor,
         ncol=4,
         fontsize=legend_fontsize,
-        frameon=True
+        frameon=True,
     )
-    
+
+    # --- PDF + PNG 保存（凡例を bbox_extra_artists に明示） ---
+    pdf_path = save_path
+    png_path = save_path.replace(".pdf", ".png")
+
+    for path in (pdf_path, png_path):
+        fig.savefig(
+            path,
+            bbox_inches="tight",
+            bbox_extra_artists=(leg,),
+            pad_inches=0.3,
+            dpi=300,
+        )
+
     plt.show()
-
-    plt.savefig(save_path, bbox_inches="tight", dpi=300)
-    plt.close()
-
+    plt.close(fig)
 
 def plot_grouped_both(base_dir, nums=[1, 5, 10], run_ids=None):
     """

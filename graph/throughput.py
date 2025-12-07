@@ -8,7 +8,8 @@ from packaging import version
 
 fontsize = 25  # default is 25
 legend_fontsize = 23  # default is 17
-figsize = (24, 5)  # default is (10, 7)
+# figsize = (24, 5)  # default is (10, 7)
+figsize = (33, 4)  # default is (10, 7)
 ylim = 1000
 line_width = 0.70
 GROUP_SPACING = 7.0

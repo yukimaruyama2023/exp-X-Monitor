@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 import matplotlib
 from packaging import version
 
+####################  configuration #################################
 
 fontsize = 25  # default is 25
 legend_fontsize = 23  # default is 17
-figsize = (24, 5)  # default is (10, 7)
+# figsize = (24, 5)  # default is (10, 7)
+figsize = (33, 4)  # default is (10, 7)
 
 # 99th latency 用の ylim（必要に応じて調整してください）
 ylim = 10
@@ -16,9 +18,12 @@ ylim = 10
 line_width = 0.70
 GROUP_SPACING = 7.0
 bbox_to_anchor = (0.5, 1.40)
+####################################################################
 
 # redisbench 用: 各行は "GET: rps=... p99 X.XXXXXX ..." 形式
 P99_RE = re.compile(r"p99\s+([0-9.]+)")
+
+
 
 # 7 本構成のラベル（throughput と同じ）
 LABELS = [
@@ -243,7 +248,7 @@ def _plot_one_metric(means, stds, nums, save_path):
     for i, label in enumerate(LABELS):
         xpos = x + offsets[i]
 
-        # --- 下レイヤ: ハッチ＋色（枠も色） ---
+        # --- 下レイヤ ---
         plt.bar(
             xpos, means[label],
             yerr=stds[label],
@@ -258,7 +263,7 @@ def _plot_one_metric(means, stds, nums, save_path):
             zorder=2,
         )
 
-        # --- 上レイヤ: 透明＋黒枠（ハッチなし） ---
+        # --- 上レイヤ ---
         plt.bar(
             xpos, means[label],
             width=width,
@@ -268,10 +273,9 @@ def _plot_one_metric(means, stds, nums, save_path):
             zorder=3,
         )
 
-    # 戻す
     plt.rcParams["hatch.linewidth"] = old_hatch_lw
 
-    # 軸
+    # 軸設定
     plt.xticks(x, [str(n) for n in nums], fontsize=fontsize)
     plt.xlabel("Number of instances", fontsize=fontsize)
     plt.tick_params(axis='y', labelsize=fontsize)
@@ -279,7 +283,7 @@ def _plot_one_metric(means, stds, nums, save_path):
     plt.ylim(0, ylim)
     plt.grid(axis="y", linestyle="--", alpha=0.4)
 
-    # 凡例（グラフ外）
+    # 凡例
     import matplotlib.patches as mpatches
     import matplotlib.patheffects as pe
     legend_handles = []
@@ -302,12 +306,21 @@ def _plot_one_metric(means, stds, nums, save_path):
         fontsize=legend_fontsize,
         frameon=True
     )
-    
+
+    # --- ここだけ追加・修正 ---
+    plt.savefig(save_path, bbox_inches="tight", dpi=300)               # PDF
+    # plt.savefig(save_path.replace(".pdf", ".png"), dpi=300)           # PNG
+    plt.savefig(
+        save_path.replace(".pdf", ".png"),
+        bbox_inches="tight",
+        pad_inches=0.2,
+        dpi=300
+    )
+
+
+
     plt.show()
-
-    plt.savefig(save_path, bbox_inches="tight", dpi=300)
     plt.close()
-
 
 def plot_grouped_both(base_dir, nums=[1, 5, 10], run_ids=None):
     """
