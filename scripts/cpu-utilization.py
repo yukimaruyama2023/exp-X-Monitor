@@ -19,16 +19,18 @@ conf_root = "./conf"
 log_script_path = "./scripts/"
 
 # num_instances = [1, 5, 10]
-num_instances = list(range(1, 13))
+# num_instances = list(range(1, 13))
 # num_instances = [12]
-intervals = [1, 0.5, 0.001]
-# metrics = ["user", "kernel"]
-metrics = ["kernel", "user"]
+num_instances = [12]
+# intervals = [1, 0.5, 0.001]
+intervals = [1]
+metrics = ["user", "kernel"]
+# metrics = ["kernel", "user"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 TRACE_READERS = []
 
 ############################################ Configuration ###############################################
-ismemcached = True # default is True
+ismemcached = False # default is True
 enable_mutilate = False # default is False
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 ##########################################################################################################
@@ -38,10 +40,13 @@ kernel_plugin_conf  = f"{conf_root}/netdata/plugin/no-plugin.conf"
 netdata_cpu_aff = "pin-netdata-core0-4.conf"
 mcd_cpu_aff = "pin-core0-4-execute.sh"
 
-if xdp_indirectcopy:
-    xdp_user_met_program = "xdp_user_indirectcopy.sh"
+if ismemcached:
+    if xdp_indirectcopy:
+        xdp_user_met_program = "xdp_user_indirectcopy.sh"
+    else:
+        xdp_user_met_program = "xdp_user_directcopy.sh"
 else:
-    xdp_user_met_program = "xdp_user_directcopy.sh"
+    xdp_user_met_program = "xdp_user_indirectcopy_redis.sh"
 
 netdata_conf = {
     "cpu_affinity": f"{conf_root}/netdata/cpu-affinity/{netdata_cpu_aff}",
@@ -118,7 +123,11 @@ def run_netdata_client_monitor(num_instance, metric, interval):
 def load_xdp(metric, num_instance):
     if metric == "user":
         if ismemcached:
-            c_name = "xdp_user_indirectcopy.c" if xdp_indirectcopy else "xdp_user_directcopy.c"
+            if xdp_indirectcopy:
+                c_name = "xdp_user_indirectcopy.c"
+            else:
+                c_name = "xdp_user_directcopy.c"
+
         else:
             c_name = "xdp_user_indirectcopy_redis.c"
 
@@ -425,7 +434,7 @@ def main():
     log_to_slack("============================ Experiment Starts!!!! =======================================")
     log_to_slack(f"============================ data_dir is {data_dir} =======================================")
     setup()
-    netdata_monitoring()
+    # netdata_monitoring()
     x_monitor_monitoring()
     log_to_slack("============================All experiment finished!!!!=======================================")
     log_to_slack(f"============================ data_dir is {data_dir} =======================================")

@@ -556,6 +556,7 @@ def main():
         x_monitor_monitoring(cnt)
 
     log_to_slack("============================All experiment finished!!!!=======================================")
+    log_to_slack(f"============================ data_dir is {data_dir} =======================================")
 
 if __name__ == "__main__":
     main()
