@@ -1,0 +1,17 @@
+Linux 6.8.12+ (sendai) 	12/07/2025 	_x86_64_	(6 CPU)
+
+09:13:20 PM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+09:14:00 PM     0      1495    0.03    0.00    0.00    0.00    0.03     0  systemd-journal
+09:14:00 PM   111    127229    0.33    0.33    0.00    0.00    0.65     2  netdata
+09:14:00 PM   111    127606    0.07    0.10    0.00    0.00    0.18     2  bash
+09:14:00 PM   111    127621    0.00    0.00    0.00    0.00    0.00     2  otel-plugin
+09:14:00 PM  1000    127846    0.20    0.00    0.00    0.00    0.20     4  ssh
+09:14:00 PM  1000    127847    0.00    0.00    0.00    0.00    0.00     5  sh
+
+Average:      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+Average:        0      1495    0.03    0.00    0.00    0.00    0.03     -  systemd-journal
+Average:      111    127229    0.33    0.33    0.00    0.00    0.65     -  netdata
+Average:      111    127606    0.07    0.10    0.00    0.00    0.18     -  bash
+Average:      111    127621    0.00    0.00    0.00    0.00    0.00     -  otel-plugin
+Average:     1000    127846    0.20    0.00    0.00    0.00    0.20     -  ssh
+Average:     1000    127847    0.00    0.00    0.00    0.00    0.00     -  sh

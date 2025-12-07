@@ -1,0 +1,9 @@
+Linux 6.8.12+ (sendai) 	12/07/2025 	_x86_64_	(6 CPU)
+
+07:59:34 PM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+08:00:14 PM  1000     44000    2.65    0.00    0.00    0.10    2.65     5  redis_info_loop
+08:00:14 PM  1000     44002    0.00    0.00    0.00    0.00    0.00     4  sh
+
+Average:      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+Average:     1000     44000    2.65    0.00    0.00    0.10    2.65     -  redis_info_loop
+Average:     1000     44002    0.00    0.00    0.00    0.00    0.00     -  sh
