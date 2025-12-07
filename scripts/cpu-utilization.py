@@ -163,6 +163,32 @@ def run_x_monitor_client_monitor(num_instance, metric, interval):
     )
     print(f"=== [End] Running monitoring client mcd={num_instance} === ")
 
+def calculate_stats_cpu(num_instance, metric, interval):
+    print(f"=== [Start] Calculate stats-loop CPU Utilization, {num_instance} instance, {metric} metrics === ")
+
+    if ismemcached:
+        # memcached_stats_loop の CPU 使用率を計測
+        out_path = (
+            f"{data_dir}/{str(num_instance).zfill(3)}mcd/"
+            f"memcached_stats_loop-{metric}metrics-{num_instance}mcd-interval{interval}.csv"
+        )
+        pattern = "memcached_stats_loop"
+    else:
+        # redis_info_loop の CPU 使用率を計測
+        out_path = (
+            f"{data_dir}/{str(num_instance).zfill(3)}redis/"
+            f"redis_info_loop-{metric}metrics-{num_instance}redis-interval{interval}.csv"
+        )
+        pattern = "redis_info_loop"
+
+    # Netdata と同じく 40 秒間 (40 秒ごと 1 回) の CPU 利用率
+    cmd = f"pidstat -u -p $(pgrep -d',' -f {pattern}) 40 1"
+
+    with open(out_path, "w") as f:
+        subprocess.run(cmd, shell=True, stdout=f, stderr=subprocess.STDOUT, check=True)
+
+    print(f"=== [End] Saved stats-loop CPU to {out_path} ===")
+
 def calculate_netdata_cpu(num_instance, metric, interval):
     print(f"=== [Start] Calculate Netdata CPU Utilization, {num_instance} instance, {metric} metrics === ")
     if ismemcached:
@@ -368,6 +394,8 @@ def netdata_monitoring():
                     else:
                         run_INFO(num_instance, interval)
                 run_netdata_client(num_instance, metric, interval)
+                if metric == "user":
+                    calculate_stats_cpu(num_instance, metric, interval)
                 calculate_netdata_cpu(num_instance, metric, interval)
                 stop_for_netdata()
                 time.sleep(5)
