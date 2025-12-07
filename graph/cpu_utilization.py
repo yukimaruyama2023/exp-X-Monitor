@@ -1056,7 +1056,8 @@ def _plot_grouped(
         ax.tick_params(axis='y', labelsize=labelsize)
 
         ax.set_yscale("log")
-        ax.set_ylim(bottom=1e-4)
+        # ax.set_ylim(bottom=1e-4)
+        ax.set_ylim(bottom=1e-5)
 
         fig = ax.figure
         fig.text(0.053, 0.73, "log scale", fontsize=23, ha='left', va='bottom')
