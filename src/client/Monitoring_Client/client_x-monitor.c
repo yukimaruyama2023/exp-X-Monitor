@@ -10,7 +10,7 @@
 #define DEST_PORT 22222
 #define RECV_ADDR "10.0.0.2" // sendai
 #define RECV_PORT 22222
-#define NUMMONITORING_BASELINE 60
+#define NUMMONITORING_BASELINE 120
 // #define NUMMONITORING_BASELINE 300
 // #define BUFFER_SIZE 6900
 #define BUFFER_SIZE 6570
@@ -30,9 +30,9 @@ int main(int argc, char **argv) {
   scanf("%f", &INTERVAL);
   NUMMONITORING = NUMMONITORING_BASELINE / INTERVAL;
 
-  if (INTERVAL >= 0.5f) {
-    NUMMONITORING *= 2;
-  }
+  // if (INTERVAL >= 0.5f) {
+  //   NUMMONITORING *= 2;
+  // }
 
   memset(&send_addr, 0, sizeof(send_addr));
   send_addr.sin_family = AF_INET;
