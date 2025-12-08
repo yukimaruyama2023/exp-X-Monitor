@@ -1,0 +1,9 @@
+Linux 6.8.12+ (sendai) 	12/08/2025 	_x86_64_	(6 CPU)
+
+02:46:27 AM   UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+02:47:07 AM  1000    348958   10.85    1.40    0.00    0.15   12.25     5  memcached_stats
+02:47:07 AM  1000    348960    0.00    0.00    0.00    0.00    0.00     3  sh
+
+Average:      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+Average:     1000    348958   10.85    1.40    0.00    0.15   12.25     -  memcached_stats
+Average:     1000    348960    0.00    0.00    0.00    0.00    0.00     -  sh
