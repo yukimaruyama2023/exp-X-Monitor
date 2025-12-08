@@ -27,7 +27,7 @@ x_monitor_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/x-monitor"
 stats_root = "/home/maruyama/workspace/exp-X-Monitor/src/server/stats-command"
 conf_root = "./conf"
 # remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/{mutilate_num_thread}thread/exp-latency/" # NOTE: artifact configuration
-remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/exp-latency/"
+remote_mutilate_script_latency = f"/home/maruyama/workspace/exp-X-Monitor/conf/mutilate/numa0/memcached/exp-latency/"
 remote_redisbench_script_latency = "/home/maruyama/workspace/exp-X-Monitor/conf/redisbench/exp-latency/"
 log_script_path = "./scripts/"
 
@@ -383,6 +383,7 @@ def main():
     netdata_monitoring()
     x_monitor_monitoring()
     log_to_slack("============================All experiment finished!!!!=======================================")
+    log_to_slack(f"============================ data_dir is {data_dir} =======================================")
 
 if __name__ == "__main__":
     main()
