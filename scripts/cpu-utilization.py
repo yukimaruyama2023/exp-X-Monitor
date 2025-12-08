@@ -19,18 +19,17 @@ conf_root = "./conf"
 log_script_path = "./scripts/"
 
 # num_instances = [1, 5, 10]
-# num_instances = list(range(1, 13))
+num_instances = list(range(1, 13))
 # num_instances = [12]
-num_instances = [12]
-# intervals = [1, 0.5, 0.001]
-intervals = [1]
+intervals = [1, 0.5, 0.001]
+# intervals = [0.01]
 metrics = ["user", "kernel"]
 # metrics = ["kernel", "user"]
 timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 TRACE_READERS = []
 
 ############################################ Configuration ###############################################
-ismemcached = False # default is True
+ismemcached = True # default is True
 enable_mutilate = False # default is False
 xdp_indirectcopy = True # default is True, but previous experiments are conducted as false (2025-11-12)
 ##########################################################################################################
@@ -434,7 +433,7 @@ def main():
     log_to_slack("============================ Experiment Starts!!!! =======================================")
     log_to_slack(f"============================ data_dir is {data_dir} =======================================")
     setup()
-    # netdata_monitoring()
+    netdata_monitoring()
     x_monitor_monitoring()
     log_to_slack("============================All experiment finished!!!!=======================================")
     log_to_slack(f"============================ data_dir is {data_dir} =======================================")
