@@ -757,12 +757,22 @@ import numpy as np
 from matplotlib.patches import Patch
 
 HATCH_LINEWIDTH = 1.6
-fontsize = 25
-labelsize = 25
-legend_fontsize = 25
+fontsize = 35
+labelsize = 35
+legend_fontsize = 30 
 # figsize = (12, 6.5)  # default is (9, 6.5)
-figsize = (24, 7)  # default is (9, 6.5)
-bbox_to_anchor = (0.5, 1.40)
+figsize = (38, 6.8)  # default is (9, 6.5)
+logsize = 30
+bbox_to_anchor = (0.5, 1.32)
+#########################################
+# HATCH_LINEWIDTH = 1.6
+# fontsize = 25
+# labelsize = 25
+# legend_fontsize = 25
+# # figsize = (12, 6.5)  # default is (9, 6.5)
+# figsize = (24, 7)  # default is (9, 6.5)
+# bbox_to_anchor = (0.5, 1.40)
+#########################################
 
 # ========== Color / Hatch ==========
 
@@ -1060,7 +1070,7 @@ def _plot_grouped(
         ax.set_ylim(bottom=1e-5)
 
         fig = ax.figure
-        fig.text(0.053, 0.73, "log scale", fontsize=23, ha='left', va='bottom')
+        fig.text(0.023, 0.76, "log scale", fontsize=logsize, ha='left', va='bottom')
 
         ax.yaxis.grid(True, linestyle="--", linewidth=1.3, alpha=0.55)
         ax.set_axisbelow(True)
@@ -1090,7 +1100,7 @@ def _plot_grouped(
         ax.legend(
             handles=legend_items,
             loc="upper center",
-            ncol=3,
+            ncol=7,
             bbox_to_anchor=bbox_to_anchor,
             fontsize=legend_fontsize,
             frameon=True,
@@ -1175,10 +1185,21 @@ def make_plots(
         _plot_grouped(ax, util_xmon, util_netdata, metric)
         fig.tight_layout()
 
+        # if save:
+        #     pdf_path = base / f"{out_prefix}-{metric}.pdf"
+        #     fig.savefig(pdf_path, bbox_inches="tight")
+        #     print(f"[info] Saved: {pdf_path}")
+        
         if save:
+            # PDF の保存
             pdf_path = base / f"{out_prefix}-{metric}.pdf"
             fig.savefig(pdf_path, bbox_inches="tight")
             print(f"[info] Saved: {pdf_path}")
+
+            # PNG の保存（解像度を少し高めに設定）
+            png_path = base / f"{out_prefix}-{metric}.png"
+            fig.savefig(png_path, dpi=300, bbox_inches="tight")
+            print(f"[info] Saved: {png_path}")
 
         plt.show()
 

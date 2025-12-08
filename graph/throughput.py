@@ -9,11 +9,21 @@ from packaging import version
 fontsize = 25  # default is 25
 legend_fontsize = 23  # default is 17
 # figsize = (24, 5)  # default is (10, 7)
-figsize = (33, 4)  # default is (10, 7)
+figsize = (37, 4)  # default is (10, 7)
 ylim = 1000
 line_width = 0.70
 GROUP_SPACING = 7.0
-bbox_to_anchor = (0.5, 1.40)
+bbox_to_anchor = (0.5, 1.37)
+########################################
+# fontsize = 25  # default is 25
+# legend_fontsize = 23  # default is 17
+# # figsize = (24, 5)  # default is (10, 7)
+# figsize = (33, 4)  # default is (10, 7)
+# ylim = 1000
+# line_width = 0.70
+# GROUP_SPACING = 7.0
+# bbox_to_anchor = (0.5, 1.40)
+##########################################
 
 THROUGHPUT_RE = re.compile(r"Total QPS\s*=\s*([\d.]+)")
 
@@ -271,7 +281,7 @@ def _plot_one_metric(means, stds, nums, save_path):
         LABELS,
         loc="upper center",
         bbox_to_anchor=bbox_to_anchor,   # ← グラフの上に配置
-        ncol=4,                       # 7 本なので 4 + 3 などに
+        ncol=7,                       # 7 本なので 4 + 3 などに
         fontsize=legend_fontsize,
         frameon=True
     )
@@ -281,8 +291,8 @@ def _plot_one_metric(means, stds, nums, save_path):
 def plot_grouped_both(base_dir, nums=[1,5,10], run_ids=None):
     # base_dir はタイムスタンプ直下（0〜9/001mcd ...）を想定（従来通り）
 
-    kernel_out = os.path.join(base_dir, "throughput_kernel.pdf")
-    user_out   = os.path.join(base_dir, "throughput_user.pdf")
+    kernel_out = os.path.join(base_dir, "memcached_throughput_kernel.pdf")
+    user_out   = os.path.join(base_dir, "memcached_throughput_user.pdf")
 
     # 1枚目: kernel
     means_k, stds_k = collect_stats_across_runs(base_dir, "kernel", nums, run_ids)

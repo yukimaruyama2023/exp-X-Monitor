@@ -6,13 +6,15 @@ import numpy as np
 from matplotlib.patches import Patch
 
 HATCH_LINEWIDTH = 1.6
-fontsize = 30
-labelsize = 30 
-legend_fontsize = 27
+fontsize = 35
+labelsize = 35 
+legend_fontsize = 30
 # figsize = (12, 6.5)  # default is (9, 6.5)
 # figsize = (24, 7)  # default is (9, 6.5)
 # figsize = (33, 6.9)  # default is (9, 6.5)
-figsize = (33, 6.8)  # default is (9, 6.5)
+# figsize = (33, 6.8)  # default is (9, 6.5)
+figsize = (38, 6.8)  # default is (9, 6.5)
+logsize = 30
 bbox_to_anchor = (0.5, 1.32)
 
 # ========== Color / Hatch ==========
@@ -314,7 +316,7 @@ def _plot_grouped(
         ax.set_ylim(bottom=1e-5, top=ymax)
 
         fig = ax.figure
-        fig.text(0.023, 0.76, "log scale", fontsize=28, ha='left', va='bottom')
+        fig.text(0.023, 0.76, "log scale", fontsize=logsize, ha='left', va='bottom')
 
         ax.yaxis.grid(True, linestyle="--", linewidth=1.3, alpha=0.55)
         ax.set_axisbelow(True)
@@ -458,12 +460,12 @@ def make_plots(
 
         if save:
             # PDF 保存
-            pdf_path = base / f"{out_prefix}-{metric}.pdf"
+            pdf_path = base / f"{out_prefix}-redis-{metric}.pdf"
             fig.savefig(pdf_path, bbox_inches="tight")
             print(f"[info] Saved: {pdf_path}")
 
             # PNG 保存（高解像度）
-            png_path = base / f"{out_prefix}-{metric}.png"
+            png_path = base / f"{out_prefix}-redis-{metric}.png"
             fig.savefig(png_path, dpi=300, bbox_inches="tight")
             print(f"[info] Saved: {png_path}")
 

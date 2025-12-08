@@ -1,11 +1,21 @@
 from throughput import (
     LABELS, LABEL_META,
     COLORS, HATCHES,
-    fontsize, legend_fontsize, figsize, GROUP_SPACING, line_width,bbox_to_anchor, 
+    # fontsize, legend_fontsize, figsize, GROUP_SPACING, line_width,bbox_to_anchor, 
     _find_interval_files_txt,
     _select_file_for_interval,
 )
-ylim = 5
+
+fontsize = 25  # default is 25
+legend_fontsize = 23  # default is 17
+# figsize = (24, 5)  # default is (10, 7)
+figsize = (37, 4)  # default is (10, 7)
+ylim = 1000
+line_width = 0.70
+GROUP_SPACING = 7.0
+bbox_to_anchor = (0.5, 1.37)
+
+ylim = 6
 
 import os
 import numpy as np
@@ -56,7 +66,6 @@ def collect_latency99(log_dir: str, metric: str, n: int):
         if lat99 is not None:
             data[label].append(lat99)  # μs
     return data
-
 
 def collect_latency99_across_runs(base_dir, metric, nums, run_ids=None):
     """
@@ -162,7 +171,7 @@ def _plot_latency99(means, stds, nums, metric, save_path):
         LABELS,
         loc="upper center",
         bbox_to_anchor=bbox_to_anchor,
-        ncol=4,
+        ncol=7,
         fontsize=legend_fontsize,
         frameon=True
     )
@@ -182,7 +191,7 @@ def plot_grouped_latency99(base_dir, nums=[1,5,10], run_ids=None):
         for label in LABELS:
             print(f"[{metric}] {label}: {means[label]} ms")
 
-        out_path = os.path.join(base_dir, f"latency99_{metric}.pdf")
+        out_path = os.path.join(base_dir, f"memcached_latency99_{metric}.pdf")
         _plot_latency99(means, stds, nums, metric, save_path=out_path)
 
 

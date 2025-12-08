@@ -7,18 +7,36 @@ from packaging import version
 
 ####################  configuration #################################
 
+# fontsize = 25  # default is 25
+# legend_fontsize = 23  # default is 17
+# # figsize = (24, 5)  # default is (10, 7)
+# figsize = (33, 4)  # default is (10, 7)
+
+# # 99th latency 用の ylim（必要に応じて調整してください）
+# ylim = 10
+
+# line_width = 0.70
+# GROUP_SPACING = 7.0
+# bbox_to_anchor = (0.5, 1.40)
+####################################################################
 fontsize = 25  # default is 25
 legend_fontsize = 23  # default is 17
-# figsize = (24, 5)  # default is (10, 7)
-figsize = (33, 4)  # default is (10, 7)
-
-# 99th latency 用の ylim（必要に応じて調整してください）
-ylim = 10
-
+# figsize = (24, 5)  # memcached だけの時はこれでちょうど良いサイズだった
+figsize = (37, 4)  # default is (10, 7)
+ylim = 9
 line_width = 0.70
 GROUP_SPACING = 7.0
-bbox_to_anchor = (0.5, 1.40)
-####################################################################
+bbox_to_anchor = (0.5, 1.37)
+#######################################################
+# fontsize = 25  # default is 25
+# legend_fontsize = 23  # default is 17
+# # figsize = (24, 5)  # memcached だけの時はこれでちょうど良いサイズだった
+# figsize = (37, 4)  # default is (10, 7)
+# ylim = 1000
+# line_width = 0.70
+# GROUP_SPACING = 7.0
+# bbox_to_anchor = (0.5, 1.40)
+##############################################################################
 
 # redisbench 用: 各行は "GET: rps=... p99 X.XXXXXX ..." 形式
 P99_RE = re.compile(r"p99\s+([0-9.]+)")
@@ -302,7 +320,7 @@ def _plot_one_metric(means, stds, nums, save_path):
         LABELS,
         loc="upper center",
         bbox_to_anchor=bbox_to_anchor,
-        ncol=4,
+        ncol=7,
         fontsize=legend_fontsize,
         frameon=True
     )
@@ -329,8 +347,8 @@ def plot_grouped_both(base_dir, nums=[1, 5, 10], run_ids=None):
     nums は instance 数のリスト。
     例: [1, 4, 8, 12] などに変えて使ってください。
     """
-    kernel_out = os.path.join(base_dir, "latency99_kernel.pdf")
-    user_out   = os.path.join(base_dir, "latency99_user.pdf")
+    kernel_out = os.path.join(base_dir, "redis_latency99_kernel.pdf")
+    user_out   = os.path.join(base_dir, "redis_latency99_user.pdf")
 
     # 1枚目: kernel
     means_k, stds_k = collect_stats_across_runs(base_dir, "kernel", nums, run_ids)

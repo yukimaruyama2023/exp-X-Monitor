@@ -6,14 +6,26 @@ import matplotlib
 from packaging import version
 
 
+
 fontsize = 25  # default is 25
 legend_fontsize = 23  # default is 17
 # figsize = (24, 5)  # memcached だけの時はこれでちょうど良いサイズだった
-figsize = (33, 4)  # default is (10, 7)
+figsize = (37, 4)  # default is (10, 7)
 ylim = 1000
 line_width = 0.70
 GROUP_SPACING = 7.0
 bbox_to_anchor = (0.5, 1.40)
+
+##############################################
+# fontsize = 25  # default is 25
+# legend_fontsize = 23  # default is 17
+# # figsize = (24, 5)  # memcached だけの時はこれでちょうど良いサイズだった
+# figsize = (33, 4)  # default is (10, 7)
+# ylim = 1000
+# line_width = 0.70
+# GROUP_SPACING = 7.0
+# bbox_to_anchor = (0.5, 1.40)
+###########################################
 
 # redisbench 用: 各行は "GET: rps=XXXX ..." 形式
 RPS_RE = re.compile(r"GET:\s*rps=([\d.]+)")
@@ -296,7 +308,7 @@ def _plot_one_metric(means, stds, nums, save_path):
         LABELS,
         loc="upper center",
         bbox_to_anchor=bbox_to_anchor,
-        ncol=4,
+        ncol=7,
         fontsize=legend_fontsize,
         frameon=True,
     )
