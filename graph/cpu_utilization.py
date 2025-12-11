@@ -1045,17 +1045,38 @@ def _plot_grouped(
             "0.001":"X-Monitor (1ms)",
         }
 
-        # --- 描画 ---
-        for i, s in enumerate(intervals):
-            # Netdata 側（user のときは netdata+go.d, kernel のときは netdata のみを事前に合計済み）
-            xpos_net = x + offsets[2 * i]
-            net_label = net_label_map[s]
-            draw_bar(ax, xpos_net, netdata_total[s], net_label, width)
+        # # --- 描画 ---
+        # for i, s in enumerate(intervals):
+        #     # Netdata 側（user のときは netdata+go.d, kernel のときは netdata のみを事前に合計済み）
+        #     xpos_net = x + offsets[2 * i]
+        #     net_label = net_label_map[s]
+        #     draw_bar(ax, xpos_net, netdata_total[s], net_label, width)
 
-            # X-Monitor 側
-            xpos_xmon = x + offsets[2 * i + 1]
-            xmon_label = xmon_label_map[s]
-            draw_bar(ax, xpos_xmon, xmon_pct[s], xmon_label, width)
+        #     # X-Monitor 側
+        #     xpos_xmon = x + offsets[2 * i + 1]
+        #     xmon_label = xmon_label_map[s]
+        #     draw_bar(ax, xpos_xmon, xmon_pct[s], xmon_label, width)
+
+        # --- 描画順を Netdata(3本) → X-Monitor(3本) に統一 ---
+
+        bars = []
+
+        # 先に Netdata の 3 本
+        for s in ["1", "0.5", "0.001"]:
+            label = net_label_map[s]          # "Netdata (1000ms)" など
+            values = netdata_total[s]         # 各インスタンスごとの値
+            bars.append((label, values))
+
+        # 次に X-Monitor の 3 本
+        for s in ["1", "0.5", "0.001"]:
+            label = xmon_label_map[s]         # "X-Monitor (1000ms)" など
+            values = xmon_pct[s]              # 各インスタンスごとの値（%に変換済み）
+            bars.append((label, values))
+
+        # offsets[0] から順に Netdata(3本), X-Monitor(3本) を描画
+        for offset, (label, values) in zip(offsets, bars):
+            xpos = x + offset
+            draw_bar(ax, xpos, values, label, width)
 
         # 体裁
         ax.set_xticks(x)
@@ -1185,19 +1206,14 @@ def make_plots(
         _plot_grouped(ax, util_xmon, util_netdata, metric)
         fig.tight_layout()
 
-        # if save:
-        #     pdf_path = base / f"{out_prefix}-{metric}.pdf"
-        #     fig.savefig(pdf_path, bbox_inches="tight")
-        #     print(f"[info] Saved: {pdf_path}")
-        
         if save:
             # PDF の保存
-            pdf_path = base / f"{out_prefix}-{metric}.pdf"
+            pdf_path = base / f"{out_prefix}_memcached-{metric}.pdf"
             fig.savefig(pdf_path, bbox_inches="tight")
             print(f"[info] Saved: {pdf_path}")
 
             # PNG の保存（解像度を少し高めに設定）
-            png_path = base / f"{out_prefix}-{metric}.png"
+            png_path = base / f"{out_prefix}_memcached-{metric}.png"
             fig.savefig(png_path, dpi=300, bbox_inches="tight")
             print(f"[info] Saved: {png_path}")
 
@@ -1211,54 +1227,6 @@ def make_plots(
 
     return results
 
-# def print_cpu_utilization_table(results):
-#     """
-#     results: make_plots() の返り値
-#       {
-#         "user":   (util_xmon, util_net_total, util_net_god, util_net_stats),
-#         "kernel": (util_xmon, util_net_total, None, None)
-#       }
-#     """
-
-#     intervals = ["1", "0.5", "0.001"]
-
-#     for metric in ("user", "kernel"):
-#         util_xmon, util_netdata, util_net_god, util_net_stats = results[metric]
-#         print(f"\n===== CPU Utilization (metric={metric}) =====")
-#         # 全 instance 数
-#         mcd_nums = sorted(set(util_xmon.keys()) | set(util_netdata.keys()))
-#         for s in intervals:
-#             print(f"\n--- interval = {s} ---")
-#             for mcd in mcd_nums:
-#                 # X-Monitor: 0〜1 の比率 → % に変換
-#                 xmon_v = util_xmon.get(mcd, {}).get(s, float("nan"))
-#                 if np.isnan(xmon_v):
-#                     xmon_str = "nan"
-#                 else:
-#                     xmon_str = f"{xmon_v * 100:.4f}"
-
-#                 # Netdata: 合計 %CPU
-#                 net_v = util_netdata.get(mcd, {}).get(s, float("nan"))
-#                 if np.isnan(net_v):
-#                     net_str = "nan"
-#                 else:
-#                     net_str = f"{net_v:.4f}"
-
-#                 # user metrics のときだけ内訳を表示
-#                 detail = ""
-#                 if metric == "user" and util_net_god is not None and util_net_stats is not None:
-#                     god_v = util_net_god.get(mcd, {}).get(s, float("nan"))
-#                     stats_v = util_net_stats.get(mcd, {}).get(s, float("nan"))
-#                     parts = []
-#                     if not np.isnan(god_v):
-#                         parts.append(f"go.d={god_v:.4f} %")
-#                     if not np.isnan(stats_v):
-#                         parts.append(f"stats={stats_v:.4f} %")
-#                     if parts:
-#                         detail = " (" + ", ".join(parts) + ")"
-
-#                 print(f"  {mcd} mcd : X-Monitor={xmon_str} % , Netdata={net_str} %"
-#                       f"{detail}")
 
 def print_cpu_utilization_table(results):
     """

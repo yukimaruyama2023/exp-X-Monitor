@@ -34,10 +34,10 @@ RPS_RE = re.compile(r"GET:\s*rps=([\d.]+)")
 LABELS = [
     "No Monitoring",
     "Netdata (1000ms)",
-    "X-Monitor (1000ms)",
     "Netdata (500ms)",
-    "X-Monitor (500ms)",
     "Netdata (1ms)",
+    "X-Monitor (1000ms)",
+    "X-Monitor (500ms)",
     "X-Monitor (1ms)",
 ]
 
@@ -336,8 +336,8 @@ def plot_grouped_both(base_dir, nums=[1, 5, 10], run_ids=None):
     nums は instance 数のリスト。
     例: [1, 4, 8, 12] などに変えて使ってください。
     """
-    kernel_out = os.path.join(base_dir, "throughput_kernel.pdf")
-    user_out   = os.path.join(base_dir, "throughput_user.pdf")
+    kernel_out = os.path.join(base_dir, "redis_throughput_kernel.pdf")
+    user_out   = os.path.join(base_dir, "redis_throughput_user.pdf")
 
     # 1枚目: kernel
     means_k, stds_k = collect_stats_across_runs(base_dir, "kernel", nums, run_ids)

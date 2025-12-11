@@ -47,10 +47,10 @@ P99_RE = re.compile(r"p99\s+([0-9.]+)")
 LABELS = [
     "No Monitoring",
     "Netdata (1000ms)",
-    "X-Monitor (1000ms)",
     "Netdata (500ms)",
-    "X-Monitor (500ms)",
     "Netdata (1ms)",
+    "X-Monitor (1000ms)",
+    "X-Monitor (500ms)",
     "X-Monitor (1ms)",
 ]
 
